@@ -1,14 +1,36 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import {
+  DarkTheme,
+  DefaultTheme,
+  Stack,
+  ThemeProvider,
+} from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { useColorScheme } from "react-native";
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AuthGate from '@/components/auth-gate';
-import { AuthProvider } from '@/providers/auth-provider';
+import { AnimatedSplashOverlay } from "@/components/animated-icon";
+import { AuthProvider, useAuth } from "@/providers/auth-provider";
 
 SplashScreen.preventAutoHideAsync();
 
-export default function TabLayout() {
+function RootNavigator() {
+  const { status, user } = useAuth();
+  const hasApprovedAccount =
+    status === "signedIn" && user?.approval_status === "APPROVED";
+
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Protected guard={hasApprovedAccount}>
+        <Stack.Screen name="(tabs)" />
+      </Stack.Protected>
+
+      <Stack.Protected guard={!hasApprovedAccount}>
+        <Stack.Screen name="(auth)" />
+      </Stack.Protected>
+    </Stack>
+  );
+}
+
+export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
@@ -17,7 +39,7 @@ export default function TabLayout() {
         value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}
       >
         <AnimatedSplashOverlay />
-        <AuthGate />
+        <RootNavigator />
       </ThemeProvider>
     </AuthProvider>
   );

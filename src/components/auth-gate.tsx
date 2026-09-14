@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { Redirect } from "expo-router";
 import {
   ActivityIndicator,
   Pressable,
@@ -8,7 +9,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import AppTabs from "@/components/app-tabs";
 import { useAuth } from "@/providers/auth-provider";
 import LoginScreen from "@/screens/login-screen";
 import SignupScreen from "@/screens/signup-screen";
@@ -79,7 +79,7 @@ export default function AuthGate() {
     status === "signedIn" &&
     user?.approval_status === "APPROVED"
   ) {
-    return <AppTabs />;
+    return <Redirect href="/" />;
   }
 
   let title = "Account unavailable";
