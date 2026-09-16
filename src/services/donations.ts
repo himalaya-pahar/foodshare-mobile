@@ -4,6 +4,7 @@ import type {
   DonationInput,
   DonationUpdateInput,
   PickupRequest,
+  PickupRequestInput,
 } from "@/types/donation";
 import type {
   PaginatedResponse,
@@ -50,6 +51,12 @@ export function getRestaurantDonations(
   );
 }
 
+export function getDonationById(
+  donationId: number,
+): Promise<DonationFeedItem> {
+  return apiRequest<DonationFeedItem>(`/donations/${donationId}`);
+}
+
 export function createDonation(
   donation: DonationInput,
 ): Promise<DonationFeedItem> {
@@ -86,6 +93,28 @@ export function getDonationPickupRequests(
   );
 }
 
+export function createPickupRequest(
+  donationId: number,
+  request: PickupRequestInput,
+): Promise<PickupRequest> {
+  return apiRequest<PickupRequest>(
+    `/donations/${donationId}/pickup-requests`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    },
+  );
+}
+
+export function getMyPickupRequests(
+  query: PaginationParams = {},
+): Promise<PaginatedResponse<PickupRequest>> {
+  return apiRequest<PaginatedResponse<PickupRequest>>(
+    paginatedPath("/pickup-requests/my", query),
+  );
+}
+
 export function acceptPickupRequest(
   requestId: number,
 ): Promise<PickupRequest> {
@@ -98,6 +127,22 @@ export function rejectPickupRequest(
   requestId: number,
 ): Promise<PickupRequest> {
   return apiRequest<PickupRequest>(`/pickup-requests/${requestId}/reject`, {
+    method: "POST",
+  });
+}
+
+export function withdrawPickupRequest(
+  requestId: number,
+): Promise<PickupRequest> {
+  return apiRequest<PickupRequest>(`/pickup-requests/${requestId}/withdraw`, {
+    method: "POST",
+  });
+}
+
+export function collectPickupRequest(
+  requestId: number,
+): Promise<PickupRequest> {
+  return apiRequest<PickupRequest>(`/pickup-requests/${requestId}/collect`, {
     method: "POST",
   });
 }

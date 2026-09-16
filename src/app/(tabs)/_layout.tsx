@@ -8,6 +8,7 @@ export default function TabsLayout() {
     user?.role === "ADMIN" && user.approval_status === "APPROVED";
   const isRestaurant =
     user?.role === "RESTAURANT" && user.approval_status === "APPROVED";
+  const isNgo = user?.role === "NGO" && user.approval_status === "APPROVED";
 
   return (
     <NativeTabs
@@ -47,6 +48,22 @@ export default function TabsLayout() {
             selected: "takeoutbag.and.cup.and.straw.fill",
           }}
           md="volunteer_activism"
+        />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="pickups" hidden={!isNgo}>
+        <NativeTabs.Trigger.Label>Pickups</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          sf={{ default: "hands.clap", selected: "hands.clap.fill" }}
+          md="local_shipping"
+        />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="history">
+        <NativeTabs.Trigger.Label>History</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          sf={{ default: "clock.arrow.circlepath", selected: "clock.arrow.circlepath" }}
+          md="history"
         />
       </NativeTabs.Trigger>
 

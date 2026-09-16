@@ -5,11 +5,13 @@ import * as ImagePicker from "expo-image-picker";
 import {
   ActivityIndicator,
   Image,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -22,6 +24,8 @@ import {
 } from "@/services/profile-image";
 import type {
   ApprovalStatus,
+  ProfileUpdate,
+  User,
   UserRole,
 } from "@/types/auth";
 import type {
@@ -100,12 +104,121 @@ function ProfileField({
   );
 }
 
+type EditForm = {
+  fullName: string;
+  organizationName: string;
+  phone: string;
+  area: string;
+  address: string;
+};
+
+function formFromUser(user: User): EditForm {
+  return {
+    fullName: user.full_name,
+    organizationName: user.organization_name ?? "",
+    phone: user.phone ?? "",
+    area: user.area ?? "",
+    address: user.address ?? "",
+  };
+}
+
+function ProfileEditModal({
+  user,
+  onClose,
+  onSave,
+}: {
+  user: User;
+  onClose: () => void;
+  onSave: (data: ProfileUpdate) => Promise<void>;
+}) {
+  const [form, setForm] = useState<EditForm>(() => formFromUser(user));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function save() {
+    const fullName = form.fullName.trim();
+
+    if (fullName.length < 2) {
+      setError("Full name must contain at least 2 characters.");
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      await onSave({
+        full_name: fullName,
+        organization_name: form.organizationName.trim() || null,
+        phone: form.phone.trim() || null,
+        area: form.area.trim() || null,
+        address: form.address.trim() || null,
+      });
+      onClose();
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Could not update your profile.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal animationType="slide" onRequestClose={onClose} transparent>
+      <SafeAreaView style={styles.modalScreen}>
+        <View style={styles.modalCard}>
+          <View style={styles.modalHeader}>
+            <View>
+              <Text style={styles.modalEyebrow}>EDIT PROFILE</Text>
+              <Text style={styles.modalTitle}>Keep your details current</Text>
+            </View>
+            <Pressable disabled={saving} onPress={onClose} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>×</Text>
+            </Pressable>
+          </View>
+
+          <ScrollView contentContainerStyle={styles.editContent} keyboardShouldPersistTaps="handled">
+            <View style={styles.editField}>
+              <Text style={styles.editLabel}>Full name *</Text>
+              <TextInput value={form.fullName} onChangeText={(fullName) => setForm((value) => ({ ...value, fullName }))} style={styles.editInput} placeholder="Your name" placeholderTextColor="#87968C" />
+            </View>
+            <View style={styles.editField}>
+              <Text style={styles.editLabel}>Organization name</Text>
+              <TextInput value={form.organizationName} onChangeText={(organizationName) => setForm((value) => ({ ...value, organizationName }))} style={styles.editInput} placeholder="Your organization" placeholderTextColor="#87968C" />
+            </View>
+            <View style={styles.editField}>
+              <Text style={styles.editLabel}>Phone number</Text>
+              <TextInput value={form.phone} onChangeText={(phone) => setForm((value) => ({ ...value, phone }))} keyboardType="phone-pad" style={styles.editInput} placeholder="Your phone number" placeholderTextColor="#87968C" />
+            </View>
+            <View style={styles.editField}>
+              <Text style={styles.editLabel}>Area</Text>
+              <TextInput value={form.area} onChangeText={(area) => setForm((value) => ({ ...value, area }))} style={styles.editInput} placeholder="e.g. Dhanmondi" placeholderTextColor="#87968C" />
+            </View>
+            <View style={styles.editField}>
+              <Text style={styles.editLabel}>Address</Text>
+              <TextInput value={form.address} onChangeText={(address) => setForm((value) => ({ ...value, address }))} multiline textAlignVertical="top" style={[styles.editInput, styles.editMultiline]} placeholder="Your address" placeholderTextColor="#87968C" />
+            </View>
+            {error ? <Text style={styles.editError}>{error}</Text> : null}
+            <Pressable disabled={saving} onPress={() => void save()} style={({ pressed }) => [styles.saveProfileButton, (pressed || saving) && styles.photoButtonPressed]}>
+              {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.saveProfileText}>Save profile</Text>}
+            </Pressable>
+          </ScrollView>
+        </View>
+      </SafeAreaView>
+    </Modal>
+  );
+}
+
 export default function ProfileScreen() {
-  const { user } = useAuth();
+  const { user, updateProfile } = useAuth();
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [photoMessage, setPhotoMessage] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -296,8 +409,13 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionLabel}>ACCOUNT DETAILS</Text>
-          <Text style={styles.sectionTitle}>Your information</Text>
+          <View>
+            <Text style={styles.sectionLabel}>ACCOUNT DETAILS</Text>
+            <Text style={styles.sectionTitle}>Your information</Text>
+          </View>
+          <Pressable onPress={() => setEditingProfile(true)} style={styles.editProfileButton}>
+            <Text style={styles.editProfileText}>Edit profile</Text>
+          </Pressable>
         </View>
 
         <View style={styles.detailsCard}>
@@ -328,6 +446,14 @@ export default function ProfileScreen() {
           <LogoutButton />
         </View>
       </ScrollView>
+
+      {editingProfile ? (
+        <ProfileEditModal
+          user={user}
+          onClose={() => setEditingProfile(false)}
+          onSave={updateProfile}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -496,7 +622,10 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   sectionHeader: {
-    gap: 5,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: 12,
     marginTop: 4,
   },
   sectionLabel: {
@@ -510,6 +639,17 @@ const styles = StyleSheet.create({
     fontSize: 21,
     fontWeight: "800",
     letterSpacing: -0.4,
+  },
+  editProfileButton: {
+    borderRadius: 11,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    backgroundColor: "#E1F0E5",
+  },
+  editProfileText: {
+    color: "#176B43",
+    fontSize: 13,
+    fontWeight: "800",
   },
   detailsCard: {
     borderRadius: 22,
@@ -543,5 +683,98 @@ const styles = StyleSheet.create({
     color: "#6B7D71",
     fontSize: 14,
     lineHeight: 21,
+  },
+  modalScreen: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(13, 36, 24, 0.46)",
+  },
+  modalCard: {
+    maxHeight: "92%",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    backgroundColor: "#F7FAF7",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 16,
+    paddingHorizontal: 22,
+    paddingVertical: 19,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E3ECE5",
+  },
+  modalEyebrow: {
+    color: "#6A8374",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1,
+  },
+  modalTitle: {
+    marginTop: 4,
+    color: "#173526",
+    fontSize: 21,
+    fontWeight: "800",
+  },
+  closeButton: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 18,
+    backgroundColor: "#E8F0EA",
+  },
+  closeButtonText: {
+    color: "#31503E",
+    fontSize: 26,
+    lineHeight: 28,
+  },
+  editContent: {
+    gap: 15,
+    padding: 22,
+    paddingBottom: 34,
+  },
+  editField: {
+    gap: 7,
+  },
+  editLabel: {
+    color: "#526B5A",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  editInput: {
+    minHeight: 50,
+    borderWidth: 1,
+    borderColor: "#D6E2D9",
+    borderRadius: 13,
+    paddingHorizontal: 13,
+    color: "#1E3829",
+    fontSize: 15,
+    backgroundColor: "#FFFFFF",
+  },
+  editMultiline: {
+    minHeight: 88,
+    paddingTop: 12,
+  },
+  editError: {
+    borderRadius: 12,
+    padding: 12,
+    color: "#9B2C22",
+    fontSize: 14,
+    lineHeight: 20,
+    backgroundColor: "#FFF0EE",
+  },
+  saveProfileButton: {
+    minHeight: 54,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 15,
+    backgroundColor: "#176B43",
+  },
+  saveProfileText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "800",
   },
 });

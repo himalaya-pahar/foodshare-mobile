@@ -12,8 +12,9 @@ import {
   login,
   logout,
   restoreSession,
+  updateMyProfile,
 } from "../services/auth";
-import type { User } from "../types/auth";
+import type { ProfileUpdate, User } from "../types/auth";
 
 type AuthStatus =
   | "restoring"
@@ -29,6 +30,7 @@ interface AuthContextValue {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   retryRestore: () => Promise<void>;
+  updateProfile: (profile: ProfileUpdate) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(
@@ -118,6 +120,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
     [runOperation],
   );
 
+  const updateProfile = useCallback(
+    (profile: ProfileUpdate) =>
+      runOperation(async () => {
+        const updatedUser = await updateMyProfile(profile);
+        setUser(updatedUser);
+      }),
+    [runOperation],
+  );
+
   return (
     <AuthContext.Provider
       value={{
@@ -128,6 +139,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         signIn,
         signOut,
         retryRestore,
+        updateProfile,
       }}
     >
       {children}

@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import DonationMediaModal from "@/components/donation-media-modal";
+import { formatBangladeshDateTime } from "@/lib/datetime";
 import { useAuth } from "@/providers/auth-provider";
 import {
   acceptPickupRequest,
@@ -132,18 +133,6 @@ function toPayload(form: DonationForm): DonationInput {
   };
 }
 
-function formatDateTime(value: Date | string): string {
-  const date = typeof value === "string" ? safeDate(value) : value;
-
-  return date.toLocaleString(undefined, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
 function mergeDate(current: Date, next: Date): Date {
   const updated = new Date(current);
   updated.setFullYear(next.getFullYear(), next.getMonth(), next.getDate());
@@ -214,7 +203,7 @@ function DateTimeField({
           pressed && styles.buttonPressed,
         ]}
       >
-        <Text style={styles.dateButtonText}>{formatDateTime(value)}</Text>
+        <Text style={styles.dateButtonText}>{formatBangladeshDateTime(value)}</Text>
         <Text style={styles.dateButtonIcon}>⌄</Text>
       </Pressable>
 
@@ -408,10 +397,12 @@ function DonationFormModal({
 
 function PickupRequestsModal({
   donation,
+  canDecide,
   onClose,
   onDonationChanged,
 }: {
   donation: DonationFeedItem;
+  canDecide: boolean;
   onClose: () => void;
   onDonationChanged: () => void;
 }) {
@@ -468,7 +459,7 @@ function PickupRequestsModal({
   }
 
   async function decide(request: PickupRequest, decision: "accept" | "reject") {
-    if (busyRequestId !== null) return;
+    if (!canDecide || busyRequestId !== null) return;
 
     setBusyRequestId(request.id);
 
@@ -558,12 +549,12 @@ function PickupRequestsModal({
                     <Text style={styles.requestStatus}>{request.status}</Text>
                   </View>
                   <Text style={styles.requestTime}>
-                    Pickup: {formatDateTime(request.estimated_pickup_at)}
+                    Pickup: {formatBangladeshDateTime(request.estimated_pickup_at)}
                   </Text>
                   {request.message ? (
                     <Text style={styles.requestMessage}>{request.message}</Text>
                   ) : null}
-                  {isPending ? (
+                  {isPending && canDecide ? (
                     <View style={styles.requestActions}>
                       <Pressable
                         accessibilityRole="button"
@@ -624,6 +615,7 @@ function PickupRequestsModal({
 
 function DonationCard({
   donation,
+  canManage,
   onEdit,
   onCancel,
   onRequests,
@@ -631,14 +623,15 @@ function DonationCard({
   onComplete,
 }: {
   donation: DonationFeedItem;
+  canManage: boolean;
   onEdit: () => void;
   onCancel: () => void;
   onRequests: () => void;
   onMedia: () => void;
   onComplete: () => void;
 }) {
-  const editable = donation.status === "AVAILABLE";
-  const canComplete = donation.status === "COLLECTED";
+  const editable = canManage && donation.status === "AVAILABLE";
+  const canComplete = canManage && donation.status === "COLLECTED";
 
   return (
     <View style={styles.donationCard}>
@@ -650,15 +643,18 @@ function DonationCard({
       </View>
       <Text style={styles.foodName}>{donation.food_name}</Text>
       <Text style={styles.quantityText}>{donation.quantity} {donation.unit}</Text>
-      <Text style={styles.deadlineText}>Pickup by {formatDateTime(donation.pickup_deadline)}</Text>
+      <Text style={styles.deadlineText}>Posted {formatBangladeshDateTime(donation.created_at)}</Text>
+      <Text style={styles.deadlineText}>Pickup by {formatBangladeshDateTime(donation.pickup_deadline)}</Text>
 
       <View style={styles.cardActions}>
         <Pressable onPress={onRequests} style={styles.secondaryButton}>
           <Text style={styles.secondaryButtonText}>Requests</Text>
         </Pressable>
-        <Pressable onPress={onMedia} style={styles.secondaryButton}>
-          <Text style={styles.secondaryButtonText}>Media</Text>
-        </Pressable>
+        {canManage ? (
+          <Pressable onPress={onMedia} style={styles.secondaryButton}>
+            <Text style={styles.secondaryButtonText}>Media</Text>
+          </Pressable>
+        ) : null}
         {editable ? (
           <Pressable onPress={onEdit} style={styles.secondaryButton}>
             <Text style={styles.secondaryButtonText}>Edit</Text>
@@ -682,6 +678,8 @@ function DonationCard({
 export default function RestaurantDonationsScreen() {
   const { user } = useAuth();
   const isRestaurant = user?.role === "RESTAURANT";
+  const canManage = isRestaurant;
+  const canMonitor = isRestaurant;
   const [page, setPage] = useState<PaginatedResponse<DonationFeedItem> | null>(null);
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -698,7 +696,7 @@ export default function RestaurantDonationsScreen() {
     useCallback(() => {
       let active = true;
 
-      if (!isRestaurant) {
+      if (!canMonitor) {
         setLoading(false);
         return () => {
           active = false;
@@ -728,7 +726,7 @@ export default function RestaurantDonationsScreen() {
       return () => {
         active = false;
       };
-    }, [isRestaurant, offset, revision]),
+    }, [canMonitor, offset, revision]),
   );
 
   async function saveDonation(input: DonationInput) {
@@ -786,7 +784,7 @@ export default function RestaurantDonationsScreen() {
     }
   }
 
-  if (!isRestaurant) {
+  if (!canMonitor) {
     return (
       <SafeAreaView style={styles.screen}>
         <View style={styles.accessBox}>
@@ -821,9 +819,11 @@ export default function RestaurantDonationsScreen() {
             <Text style={styles.sectionLabel}>YOUR DONATIONS</Text>
             <Text style={styles.sectionTitle}>{total === 1 ? "1 donation" : `${total} donations`}</Text>
           </View>
-          <Pressable onPress={() => setFormDonation(null)} style={({ pressed }) => [styles.addButton, pressed && styles.buttonPressed]}>
-            <Text style={styles.addButtonText}>+ Add</Text>
-          </Pressable>
+          {canManage ? (
+            <Pressable onPress={() => setFormDonation(null)} style={({ pressed }) => [styles.addButton, pressed && styles.buttonPressed]}>
+              <Text style={styles.addButtonText}>+ Add</Text>
+            </Pressable>
+          ) : null}
         </View>
 
         {loading ? <View style={styles.loadingBox}><ActivityIndicator color="#176B43" /><Text style={styles.loadingText}>Loading donations…</Text></View> : null}
@@ -834,6 +834,7 @@ export default function RestaurantDonationsScreen() {
           <DonationCard
             key={donation.id}
             donation={donation}
+            canManage={canManage}
             onEdit={() => setFormDonation(donation)}
             onCancel={() => confirmCancel(donation)}
             onRequests={() => setSelectedDonation(donation)}
@@ -848,8 +849,8 @@ export default function RestaurantDonationsScreen() {
         </View> : null}
       </ScrollView>
 
-      {formDonation !== undefined ? <DonationFormModal key={formDonation?.id ?? "new"} donation={formDonation} area={user?.area} address={user?.address} onClose={() => setFormDonation(undefined)} onSave={saveDonation} /> : null}
-      {selectedDonation ? <PickupRequestsModal donation={selectedDonation} onClose={() => setSelectedDonation(null)} onDonationChanged={reload} /> : null}
+      {formDonation !== undefined && canManage ? <DonationFormModal key={formDonation?.id ?? "new"} donation={formDonation} area={user?.area} address={user?.address} onClose={() => setFormDonation(undefined)} onSave={saveDonation} /> : null}
+      {selectedDonation ? <PickupRequestsModal donation={selectedDonation} canDecide={canManage} onClose={() => setSelectedDonation(null)} onDonationChanged={reload} /> : null}
       {mediaDonation ? <DonationMediaModal donationId={mediaDonation.id} donationName={mediaDonation.food_name} onClose={() => setMediaDonation(null)} /> : null}
     </SafeAreaView>
   );

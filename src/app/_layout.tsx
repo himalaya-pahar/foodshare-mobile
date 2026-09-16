@@ -21,6 +21,7 @@ function RootNavigator() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={hasApprovedAccount}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="donation/[id]" />
       </Stack.Protected>
 
       <Stack.Protected guard={!hasApprovedAccount}>

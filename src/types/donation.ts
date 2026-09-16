@@ -56,3 +56,8 @@ export interface PickupRequest {
   requested_at: string;
   updated_at: string;
 }
+
+export type PickupRequestInput = {
+  estimated_pickup_at: string;
+  message?: string | null;
+};

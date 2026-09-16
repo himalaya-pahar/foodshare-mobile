@@ -6,6 +6,7 @@ import {
 } from "../lib/token-storage";
 import type {
   LoginResponse,
+  ProfileUpdate,
   SignupRequest,
   User,
 } from "../types/auth";
@@ -23,6 +24,14 @@ export function signup(data: SignupRequest): Promise<User> {
 
 export function getCurrentUser(): Promise<User> {
   return apiRequest<User>("/users/me");
+}
+
+export function updateMyProfile(data: ProfileUpdate): Promise<User> {
+  return apiRequest<User>("/users/me", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
 }
 
 export async function login(

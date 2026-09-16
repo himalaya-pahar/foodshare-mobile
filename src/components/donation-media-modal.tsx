@@ -19,6 +19,7 @@ import {
   getDonationMedia,
   uploadDonationMedia,
 } from "@/services/donation-media";
+import { formatBangladeshDate } from "@/lib/datetime";
 import type {
   DonationMedia,
   DonationMediaContentType,
@@ -70,18 +71,6 @@ function resolveContentType(
     ?.toLowerCase();
 
   return extension === "mp4" ? "video/mp4" : null;
-}
-
-function formatDate(value: string): string {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) return "Recently uploaded";
-
-  return date.toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
 }
 
 function formatFileSize(bytes: number): string {
@@ -384,7 +373,7 @@ export default function DonationMediaModal({
                       </View>
                       <View style={styles.videoCopy}>
                         <Text style={styles.videoTitle}>Donation video</Text>
-                        <Text style={styles.videoDate}>{formatDate(item.created_at)}</Text>
+                        <Text style={styles.videoDate}>{formatBangladeshDate(item.created_at)}</Text>
                       </View>
                       <Pressable
                         accessibilityRole="button"

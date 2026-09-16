@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { useFocusEffect } from "expo-router";
+import { router, useFocusEffect, type Href } from "expo-router";
 import { useVideoPlayer, VideoView } from "expo-video";
 import {
   ActivityIndicator,
@@ -10,11 +10,13 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth } from "@/providers/auth-provider";
+import { formatBangladeshDateTime } from "@/lib/datetime";
 import { getDonationMedia } from "@/services/donation-media";
 import { getAvailableDonations } from "@/services/donations";
 import type { DonationFeedItem } from "@/types/donation";
@@ -26,19 +28,8 @@ type FeedDonation = DonationFeedItem & {
   media: DonationMedia[];
 };
 
-function formatDateTime(value: string): string {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "Time unavailable";
-  }
-
-  return date.toLocaleString(undefined, {
-    day: "numeric",
-    month: "short",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+function donationHref(donationId: number): Href {
+  return `/donation/${donationId}` as Href;
 }
 
 function DonationVideoPreview({
@@ -64,12 +55,26 @@ function DonationVideoPreview({
   );
 }
 
-function DonationCard({ donation }: { donation: FeedDonation }) {
+function DonationCard({
+  donation,
+  onPress,
+}: {
+  donation: FeedDonation;
+  onPress: () => void;
+}) {
   const images = donation.media.filter((item) => item.media_type === "IMAGE");
   const videos = donation.media.filter((item) => item.media_type === "VIDEO");
 
   return (
-    <View style={styles.donationCard}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`View ${donation.food_name}`}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.donationCard,
+        pressed && styles.buttonPressed,
+      ]}
+    >
       <View style={styles.cardTopRow}>
         <View style={styles.availableBadge}>
           <View style={styles.availableDot} />
@@ -126,7 +131,7 @@ function DonationCard({ donation }: { donation: FeedDonation }) {
         <View style={styles.metaItem}>
           <Text style={styles.metaLabel}>PICKUP BY</Text>
           <Text style={styles.metaValue} numberOfLines={1}>
-            {formatDateTime(donation.pickup_deadline)}
+            {formatBangladeshDateTime(donation.pickup_deadline)}
           </Text>
         </View>
       </View>
@@ -134,7 +139,7 @@ function DonationCard({ donation }: { donation: FeedDonation }) {
       <Text style={styles.address} numberOfLines={2}>
         {donation.pickup_address}
       </Text>
-    </View>
+    </Pressable>
   );
 }
 
@@ -146,6 +151,9 @@ export default function HomeScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [areaInput, setAreaInput] = useState("");
+  const [area, setArea] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const addMediaToDonations = useCallback(
     async (items: DonationFeedItem[]): Promise<FeedDonation[]> =>
@@ -173,6 +181,7 @@ export default function HomeScreen() {
         const page = await getAvailableDonations({
           limit: PAGE_SIZE,
           offset,
+          area: area || undefined,
         });
         const donationsWithMedia = await addMediaToDonations(page.items);
 
@@ -190,7 +199,7 @@ export default function HomeScreen() {
         );
       }
     },
-    [addMediaToDonations],
+    [addMediaToDonations, area],
   );
 
   useFocusEffect(
@@ -205,6 +214,7 @@ export default function HomeScreen() {
           const page = await getAvailableDonations({
             limit: PAGE_SIZE,
             offset: 0,
+            area: area || undefined,
           });
           const donationsWithMedia = await addMediaToDonations(page.items);
 
@@ -232,7 +242,7 @@ export default function HomeScreen() {
       return () => {
         active = false;
       };
-    }, [addMediaToDonations]),
+    }, [addMediaToDonations, area, refreshKey]),
   );
 
   async function refreshFeed() {
@@ -249,6 +259,23 @@ export default function HomeScreen() {
     setLoadingMore(true);
     await loadFeed(donations.length, "append");
     setLoadingMore(false);
+  }
+
+  function searchByArea() {
+    const nextArea = areaInput.trim();
+
+    if (nextArea === area) {
+      setRefreshKey((value) => value + 1);
+      return;
+    }
+
+    setArea(nextArea);
+  }
+
+  function clearAreaSearch() {
+    setAreaInput("");
+    if (!area) return;
+    setArea("");
   }
 
   const firstName = user?.full_name.trim().split(/\s+/)[0] || "there";
@@ -296,6 +323,34 @@ export default function HomeScreen() {
           </Text>
         </View>
 
+        <View style={styles.searchRow}>
+          <TextInput
+            onChangeText={setAreaInput}
+            onSubmitEditing={searchByArea}
+            placeholder="Search donations by area"
+            placeholderTextColor="#87968C"
+            returnKeyType="search"
+            style={styles.searchInput}
+            value={areaInput}
+          />
+          <Pressable
+            accessibilityRole="button"
+            onPress={searchByArea}
+            style={({ pressed }) => [styles.searchButton, pressed && styles.buttonPressed]}
+          >
+            <Text style={styles.searchButtonText}>Search</Text>
+          </Pressable>
+        </View>
+
+        {area ? (
+          <View style={styles.activeFilterRow}>
+            <Text style={styles.activeFilterText}>Area: {area}</Text>
+            <Pressable onPress={clearAreaSearch}>
+              <Text style={styles.clearFilterText}>Clear</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
         {loading ? (
           <View style={styles.loadingBox}>
             <ActivityIndicator color="#176B43" />
@@ -334,7 +389,13 @@ export default function HomeScreen() {
 
         {!loading && !error
           ? donations.map((donation) => (
-              <DonationCard key={donation.id} donation={donation} />
+              <DonationCard
+                key={donation.id}
+                donation={donation}
+                onPress={() =>
+                  router.push(donationHref(donation.id))
+                }
+              />
             ))
           : null}
 
@@ -426,6 +487,52 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 16,
     marginTop: 8,
+  },
+  searchRow: {
+    flexDirection: "row",
+    gap: 9,
+  },
+  searchInput: {
+    flex: 1,
+    minHeight: 48,
+    borderWidth: 1,
+    borderColor: "#D6E2D9",
+    borderRadius: 13,
+    paddingHorizontal: 13,
+    color: "#1E3829",
+    fontSize: 15,
+    backgroundColor: "#FFFFFF",
+  },
+  searchButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 13,
+    paddingHorizontal: 15,
+    backgroundColor: "#176B43",
+  },
+  searchButtonText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  activeFilterRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 12,
+    paddingHorizontal: 13,
+    paddingVertical: 10,
+    backgroundColor: "#E2F4E8",
+  },
+  activeFilterText: {
+    color: "#176B43",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  clearFilterText: {
+    color: "#176B43",
+    fontSize: 13,
+    fontWeight: "800",
   },
   sectionLabel: {
     color: "#6A8374",

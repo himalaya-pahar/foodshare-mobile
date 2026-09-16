@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth } from "@/providers/auth-provider";
+import { formatBangladeshDate } from "@/lib/datetime";
 import {
   deleteAdminUser,
   getAdminUsers,
@@ -34,17 +35,7 @@ function formatRole(role: AdminUser["role"]): string {
 }
 
 function formatJoinedDate(createdAt: string): string {
-  const date = new Date(createdAt);
-
-  if (Number.isNaN(date.getTime())) {
-    return "Joined date unavailable";
-  }
-
-  return `Joined ${date.toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  })}`;
+  return `Joined ${formatBangladeshDate(createdAt)}`;
 }
 
 function UserRow({
