@@ -261,6 +261,7 @@ export default function DonationDetailScreen() {
                 <Text style={styles.statusText}>{statusLabel(donation.status)}</Text>
               </View>
               <Text style={styles.title}>{donation.food_name}</Text>
+              <Text style={styles.donationId}>Donation ID {donation.id}</Text>
               <Text style={styles.area}>{donation.pickup_area}</Text>
             </View>
 
@@ -391,6 +392,7 @@ const styles = StyleSheet.create({
   statusBadge: { alignSelf: "flex-start", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, backgroundColor: "#DDF3E4" },
   statusText: { color: "#176B43", fontSize: 12, fontWeight: "800" },
   title: { color: "#FFFFFF", fontSize: 29, fontWeight: "800", letterSpacing: -0.8 },
+  donationId: { marginTop: -3, color: "#D7E9DC", fontSize: 12, fontWeight: "800" },
   area: { color: "#C5E5D0", fontSize: 14, fontWeight: "700" },
   mediaRow: { gap: 10 },
   image: { width: 246, height: 184, borderRadius: 17, backgroundColor: "#E1EAE3" },

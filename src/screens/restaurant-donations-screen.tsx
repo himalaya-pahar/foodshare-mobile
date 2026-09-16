@@ -545,7 +545,11 @@ function PickupRequestsModal({
               return (
                 <View key={request.id} style={styles.requestCard}>
                   <View style={styles.requestHeader}>
-                    <Text style={styles.requestName}>NGO #{request.ngo_id}</Text>
+                    <Text style={styles.requestName}>
+                      {request.ngo_organization_name?.trim() ||
+                        request.ngo_full_name?.trim() ||
+                        "Organization unavailable"}
+                    </Text>
                     <Text style={styles.requestStatus}>{request.status}</Text>
                   </View>
                   <Text style={styles.requestTime}>
@@ -636,15 +640,28 @@ function DonationCard({
   return (
     <View style={styles.donationCard}>
       <View style={styles.cardHeader}>
+        <Text style={styles.donationIdTop}>Donation ID {donation.id}</Text>
         <View style={[styles.statusBadge, styles[`status${donation.status}`]]}>
           <Text style={styles.statusText}>{statusLabel(donation.status)}</Text>
         </View>
-        <Text style={styles.areaText} numberOfLines={1}>{donation.pickup_area}</Text>
       </View>
-      <Text style={styles.foodName}>{donation.food_name}</Text>
-      <Text style={styles.quantityText}>{donation.quantity} {donation.unit}</Text>
-      <Text style={styles.deadlineText}>Posted {formatBangladeshDateTime(donation.created_at)}</Text>
-      <Text style={styles.deadlineText}>Pickup by {formatBangladeshDateTime(donation.pickup_deadline)}</Text>
+      <View style={styles.donationIdentity}>
+        <Text style={styles.foodName}>{donation.food_name}</Text>
+        <Text style={styles.areaText} numberOfLines={1}>{donation.pickup_area}</Text>
+        <Text style={styles.quantityText}>{donation.quantity} {donation.unit}</Text>
+      </View>
+
+      <View style={styles.schedulePanel}>
+        <View style={styles.scheduleRow}>
+          <Text style={styles.scheduleLabel}>POSTED</Text>
+          <Text style={styles.scheduleValue}>{formatBangladeshDateTime(donation.created_at)}</Text>
+        </View>
+        <View style={styles.scheduleDivider} />
+        <View style={styles.scheduleRow}>
+          <Text style={styles.scheduleLabel}>PICKUP BY</Text>
+          <Text style={styles.scheduleValue}>{formatBangladeshDateTime(donation.pickup_deadline)}</Text>
+        </View>
+      </View>
 
       <View style={styles.cardActions}>
         <Pressable onPress={onRequests} style={styles.secondaryButton}>
@@ -872,7 +889,7 @@ const styles = StyleSheet.create({
   sectionTitle: { marginTop: 4, color: "#173526", fontSize: 23, fontWeight: "800" },
   addButton: { borderRadius: 13, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: "#176B43" },
   addButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
-  donationCard: { gap: 10, borderRadius: 22, padding: 18, backgroundColor: "#FFFFFF" },
+  donationCard: { gap: 14, borderWidth: 1, borderColor: "#E5EEE7", borderRadius: 24, padding: 17, backgroundColor: "#FFFFFF" },
   cardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
   statusBadge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, backgroundColor: "#E4F2E8" },
   statusAVAILABLE: { backgroundColor: "#E2F4E8" },
@@ -882,11 +899,17 @@ const styles = StyleSheet.create({
   statusEXPIRED: { backgroundColor: "#F0F0F0" },
   statusCANCELLED: { backgroundColor: "#FFE8E5" },
   statusText: { color: "#24593B", fontSize: 12, fontWeight: "800" },
-  areaText: { flex: 1, color: "#66786D", fontSize: 13, fontWeight: "700", textAlign: "right" },
+  areaText: { color: "#66786D", fontSize: 13, fontWeight: "700" },
   foodName: { color: "#173526", fontSize: 21, fontWeight: "800" },
+  donationIdentity: { gap: 5 },
+  donationIdTop: { color: "#6E8275", fontSize: 11, fontWeight: "700", letterSpacing: 0.3 },
   quantityText: { color: "#496957", fontSize: 15, fontWeight: "700" },
-  deadlineText: { color: "#66786D", fontSize: 13 },
-  cardActions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 },
+  schedulePanel: { borderRadius: 15, padding: 13, backgroundColor: "#F3F7F4" },
+  scheduleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  scheduleLabel: { color: "#7A8C80", fontSize: 10, fontWeight: "800", letterSpacing: 0.7 },
+  scheduleValue: { flex: 1, color: "#355442", fontSize: 12, fontWeight: "700", textAlign: "right" },
+  scheduleDivider: { height: 1, marginVertical: 10, backgroundColor: "#DDE8DF" },
+  cardActions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 1 },
   secondaryButton: { borderRadius: 10, paddingHorizontal: 11, paddingVertical: 9, backgroundColor: "#EDF7F0" },
   secondaryButtonText: { color: "#176B43", fontSize: 13, fontWeight: "800" },
   cancelButton: { borderRadius: 10, paddingHorizontal: 11, paddingVertical: 9, backgroundColor: "#FFF0EE" },

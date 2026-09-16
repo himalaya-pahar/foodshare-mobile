@@ -41,7 +41,7 @@ function PickupRequestCard({
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <Text style={styles.requestTitle}>Donation #{request.donation_id}</Text>
+        <Text style={styles.requestTitle}>Donation ID {request.donation_id}</Text>
         <View style={styles.requestBadge}>
           <Text style={styles.requestBadgeText}>{request.status}</Text>
         </View>

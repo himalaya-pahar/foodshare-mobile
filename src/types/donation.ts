@@ -50,6 +50,8 @@ export interface PickupRequest {
   id: number;
   donation_id: number;
   ngo_id: number;
+  ngo_organization_name?: string | null;
+  ngo_full_name?: string | null;
   estimated_pickup_at: string;
   message: string | null;
   status: PickupRequestStatus;

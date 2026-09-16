@@ -120,7 +120,7 @@ function legacyDonationFlows(
     return {
       donation_id: donationId,
       pickup_request_id: null,
-      food_name: donation?.food_name ?? `Donation #${donationId}`,
+      food_name: donation?.food_name ?? `Donation ID ${donationId}`,
       posted_at: donation?.created_at ?? items[0]?.created_at ?? null,
       donor_organization_name: donorOrganizationName,
       receiver_organization_name: null,
@@ -195,7 +195,7 @@ function FlowCard({ flow, mode }: { flow: HistoryFlow; mode: HistoryMode }) {
       <View style={styles.flowHeader}>
         <View style={styles.flowHeaderCopy}>
           <Text style={styles.foodName} numberOfLines={2}>
-            {flow.food_name?.trim() || `Donation #${flow.donation_id}`}
+            {flow.food_name?.trim() || `Donation ID ${flow.donation_id}`}
           </Text>
           {flow.posted_at ? (
             <Text style={styles.postedAt}>Posted {formatBangladeshDateTime(flow.posted_at)}</Text>

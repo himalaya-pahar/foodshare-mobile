@@ -76,22 +76,24 @@ function DonationCard({
       ]}
     >
       <View style={styles.cardTopRow}>
+        <Text style={styles.donationIdTop}>Donation ID {donation.id}</Text>
         <View style={styles.availableBadge}>
           <View style={styles.availableDot} />
           <Text style={styles.availableText}>Available</Text>
         </View>
+      </View>
+
+      <View style={styles.cardIdentity}>
+        <Text style={styles.foodName}>{donation.food_name}</Text>
         <Text style={styles.cardArea} numberOfLines={1}>
           {donation.pickup_area}
         </Text>
+        {donation.description ? (
+          <Text style={styles.description} numberOfLines={3}>
+            {donation.description}
+          </Text>
+        ) : null}
       </View>
-
-      <Text style={styles.foodName}>{donation.food_name}</Text>
-
-      {donation.description ? (
-        <Text style={styles.description} numberOfLines={3}>
-          {donation.description}
-        </Text>
-      ) : null}
 
       {images.length > 0 || videos.length > 0 ? (
         <ScrollView
@@ -118,27 +120,34 @@ function DonationCard({
         </ScrollView>
       ) : null}
 
-      <View style={styles.metaRow}>
-        <View style={styles.metaItem}>
-          <Text style={styles.metaLabel}>QUANTITY</Text>
-          <Text style={styles.metaValue}>
-            {donation.quantity} {donation.unit}
-          </Text>
-        </View>
+      <View style={styles.detailsPanel}>
+        <View style={styles.metaRow}>
+          <View style={styles.metaItem}>
+            <Text style={styles.metaLabel}>QUANTITY</Text>
+            <Text style={styles.metaValue}>
+              {donation.quantity} {donation.unit}
+            </Text>
+          </View>
 
-        <View style={styles.metaDivider} />
+          <View style={styles.metaDivider} />
 
-        <View style={styles.metaItem}>
-          <Text style={styles.metaLabel}>PICKUP BY</Text>
-          <Text style={styles.metaValue} numberOfLines={1}>
-            {formatBangladeshDateTime(donation.pickup_deadline)}
-          </Text>
+          <View style={styles.metaItem}>
+            <Text style={styles.metaLabel}>PICKUP BY</Text>
+            <Text style={styles.metaValue} numberOfLines={1}>
+              {formatBangladeshDateTime(donation.pickup_deadline)}
+            </Text>
+          </View>
         </View>
       </View>
 
-      <Text style={styles.address} numberOfLines={2}>
-        {donation.pickup_address}
-      </Text>
+      <View style={styles.locationSection}>
+        <Text style={styles.locationLabel}>PICKUP LOCATION</Text>
+        <Text style={styles.address} numberOfLines={2}>{donation.pickup_address}</Text>
+      </View>
+
+      <View style={styles.cardFooter}>
+        <Text style={styles.postedAt}>Posted {formatBangladeshDateTime(donation.created_at)}</Text>
+      </View>
     </Pressable>
   );
 }
@@ -565,9 +574,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   donationCard: {
-    gap: 12,
-    borderRadius: 22,
-    padding: 18,
+    gap: 14,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#E5EEE7",
+    borderRadius: 24,
+    padding: 17,
     backgroundColor: "#FFFFFF",
     shadowColor: "#173526",
     shadowOpacity: 0.05,
@@ -579,7 +591,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 12,
+    gap: 10,
   },
   availableBadge: {
     flexDirection: "row",
@@ -602,17 +614,29 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   cardArea: {
-    flex: 1,
     color: "#66786D",
     fontSize: 13,
     fontWeight: "700",
-    textAlign: "right",
   },
   foodName: {
     color: "#173526",
     fontSize: 21,
     fontWeight: "800",
     letterSpacing: -0.4,
+  },
+  cardIdentity: {
+    gap: 5,
+  },
+  donationIdTop: {
+    color: "#6E8275",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+  },
+  postedAt: {
+    color: "#6E8275",
+    fontSize: 12,
+    lineHeight: 18,
   },
   description: {
     color: "#587063",
@@ -638,8 +662,10 @@ const styles = StyleSheet.create({
   metaRow: {
     flexDirection: "row",
     alignItems: "stretch",
-    borderRadius: 14,
-    padding: 12,
+  },
+  detailsPanel: {
+    borderRadius: 15,
+    padding: 13,
     backgroundColor: "#F3F7F4",
   },
   metaItem: {
@@ -663,9 +689,27 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   address: {
-    color: "#66786D",
+    color: "#405A49",
     fontSize: 13,
     lineHeight: 19,
+  },
+  locationSection: {
+    gap: 3,
+  },
+  locationLabel: {
+    color: "#7A8C80",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.7,
+  },
+  cardFooter: {
+    marginHorizontal: -17,
+    marginBottom: -17,
+    paddingHorizontal: 17,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#EDF2EE",
+    backgroundColor: "#FAFCFA",
   },
   errorBox: {
     gap: 9,

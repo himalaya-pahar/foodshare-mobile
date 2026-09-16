@@ -5,7 +5,7 @@ import {
   ThemeProvider,
 } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useColorScheme } from "react-native";
+import { StatusBar, useColorScheme } from "react-native";
 
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
 import { AuthProvider, useAuth } from "@/providers/auth-provider";
@@ -18,7 +18,12 @@ function RootNavigator() {
     status === "signedIn" && user?.approval_status === "APPROVED";
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: "#F4F7F3" },
+      }}
+    >
       <Stack.Protected guard={hasApprovedAccount}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="donation/[id]" />
@@ -39,6 +44,13 @@ export default function RootLayout() {
       <ThemeProvider
         value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}
       >
+        <StatusBar
+          animated
+          backgroundColor="#F4F7F3"
+          barStyle="dark-content"
+          hidden={false}
+          translucent={false}
+        />
         <AnimatedSplashOverlay />
         <RootNavigator />
       </ThemeProvider>
