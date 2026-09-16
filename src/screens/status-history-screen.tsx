@@ -160,7 +160,15 @@ function legacyPickupFlows(
   });
 }
 
-function FlowCard({ flow, mode }: { flow: HistoryFlow; mode: HistoryMode }) {
+function FlowCard({
+  flow,
+  mode,
+  showOrganizationIds,
+}: {
+  flow: HistoryFlow;
+  mode: HistoryMode;
+  showOrganizationIds: boolean;
+}) {
   const steps = mode === "donations" ? DONATION_STEPS : PICKUP_STEPS;
   const currentStep = flow.current_status && isTimelineStep(flow.current_status, steps)
     ? flow.current_status
@@ -214,15 +222,31 @@ function FlowCard({ flow, mode }: { flow: HistoryFlow; mode: HistoryMode }) {
         <View style={styles.organizationColumn}>
           <Text style={styles.organizationLabel}>DONATED BY</Text>
           <Text style={styles.organizationName} numberOfLines={2}>
-            {organizationLabel(flow.donor_organization_name, "Donor organization unavailable")}
+            {organizationLabel(
+              flow.donor_organization_name,
+              flow.donor_user_id
+                ? `Organization account ID ${flow.donor_user_id}`
+                : "Donor organization unavailable",
+            )}
           </Text>
+          {showOrganizationIds && flow.donor_user_id ? (
+            <Text style={styles.organizationId}>Account ID {flow.donor_user_id}</Text>
+          ) : null}
         </View>
         <View style={styles.organizationDivider} />
         <View style={styles.organizationColumn}>
           <Text style={styles.organizationLabel}>{receiverLabel}</Text>
           <Text style={styles.organizationName} numberOfLines={2}>
-            {organizationLabel(flow.receiver_organization_name, receiverFallback)}
+            {organizationLabel(
+              flow.receiver_organization_name,
+              flow.receiver_user_id
+                ? `Organization account ID ${flow.receiver_user_id}`
+                : receiverFallback,
+            )}
           </Text>
+          {showOrganizationIds && flow.receiver_user_id ? (
+            <Text style={styles.organizationId}>Account ID {flow.receiver_user_id}</Text>
+          ) : null}
         </View>
       </View>
 
@@ -387,7 +411,7 @@ export default function StatusHistoryScreen() {
         {loading ? <View style={styles.stateBox}><ActivityIndicator color="#176B43" /><Text style={styles.stateText}>Loading history…</Text></View> : null}
         {error ? <View style={styles.errorBox}><Text style={styles.errorText}>{error}</Text><Pressable onPress={() => setRefreshKey((value) => value + 1)}><Text style={styles.retryText}>Try again</Text></Pressable></View> : null}
         {!loading && !error && flows.length === 0 ? <View style={styles.emptyBox}><Text style={styles.emptyTitle}>No history yet</Text><Text style={styles.emptyText}>Food journeys will appear here as donations and pickups progress.</Text></View> : null}
-        {!loading && !error ? flows.map((flow) => <FlowCard key={`${flow.donation_id}-${flow.pickup_request_id ?? "donation"}`} flow={flow} mode={mode} />) : null}
+        {!loading && !error ? flows.map((flow) => <FlowCard key={`${flow.donation_id}-${flow.pickup_request_id ?? "donation"}`} flow={flow} mode={mode} showOrganizationIds={isAdmin} />) : null}
 
         {total > PAGE_SIZE ? (
           <View style={styles.paginationRow}>
@@ -444,6 +468,7 @@ const styles = StyleSheet.create({
   organizationDivider: { width: 1, marginHorizontal: 10, backgroundColor: "#D8E6DB" },
   organizationLabel: { color: "#6E8275", fontSize: 10, fontWeight: "800", letterSpacing: 0.7 },
   organizationName: { color: "#284937", fontSize: 13, fontWeight: "700", lineHeight: 19 },
+  organizationId: { color: "#6E8275", fontSize: 10, fontWeight: "700" },
   timeline: { flexDirection: "row", alignItems: "flex-start" },
   timelineStep: { flex: 1, alignItems: "center", minWidth: 0 },
   timelineVisual: { width: "100%", flexDirection: "row", alignItems: "center" },

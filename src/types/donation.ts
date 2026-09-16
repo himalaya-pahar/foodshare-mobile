@@ -16,6 +16,8 @@ export type PickupRequestStatus =
 export interface DonationFeedItem {
   id: number;
   restaurant_id: number;
+  restaurant_organization_name?: string | null;
+  restaurant_full_name?: string | null;
   food_name: string;
   description: string | null;
   quantity: number;

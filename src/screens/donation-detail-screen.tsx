@@ -214,6 +214,8 @@ export default function DonationDetailScreen() {
 
   const canRequest =
     user?.role === "NGO" && donation?.status === "AVAILABLE";
+  const postedBy = donation?.restaurant_organization_name?.trim() ||
+    donation?.restaurant_full_name?.trim();
 
   return (
     <SafeAreaView
@@ -263,6 +265,9 @@ export default function DonationDetailScreen() {
               <Text style={styles.title}>{donation.food_name}</Text>
               <Text style={styles.donationId}>Donation ID {donation.id}</Text>
               <Text style={styles.area}>{donation.pickup_area}</Text>
+              {postedBy ? (
+                <Text style={styles.postedBy}>Posted by {postedBy}</Text>
+              ) : null}
             </View>
 
             {images.length > 0 || videos.length > 0 ? (
@@ -394,6 +399,7 @@ const styles = StyleSheet.create({
   title: { color: "#FFFFFF", fontSize: 29, fontWeight: "800", letterSpacing: -0.8 },
   donationId: { marginTop: -3, color: "#D7E9DC", fontSize: 12, fontWeight: "800" },
   area: { color: "#C5E5D0", fontSize: 14, fontWeight: "700" },
+  postedBy: { color: "#E0F2E5", fontSize: 13, fontWeight: "800" },
   mediaRow: { gap: 10 },
   image: { width: 246, height: 184, borderRadius: 17, backgroundColor: "#E1EAE3" },
   video: { width: 246, height: 184, overflow: "hidden", borderRadius: 17, backgroundColor: "#1C4834" },

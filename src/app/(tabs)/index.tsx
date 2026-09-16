@@ -64,6 +64,8 @@ function DonationCard({
 }) {
   const images = donation.media.filter((item) => item.media_type === "IMAGE");
   const videos = donation.media.filter((item) => item.media_type === "VIDEO");
+  const postedBy = donation.restaurant_organization_name?.trim() ||
+    donation.restaurant_full_name?.trim();
 
   return (
     <Pressable
@@ -94,6 +96,13 @@ function DonationCard({
           </Text>
         ) : null}
       </View>
+
+      {postedBy ? (
+        <View style={styles.postedByRow}>
+          <Text style={styles.postedByLabel}>POSTED BY</Text>
+          <Text style={styles.postedByName} numberOfLines={1}>{postedBy}</Text>
+        </View>
+      ) : null}
 
       {images.length > 0 || videos.length > 0 ? (
         <ScrollView
@@ -642,6 +651,28 @@ const styles = StyleSheet.create({
     color: "#587063",
     fontSize: 14,
     lineHeight: 21,
+  },
+  postedByRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#EEF3EF",
+    paddingTop: 12,
+  },
+  postedByLabel: {
+    color: "#7A8C80",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.7,
+  },
+  postedByName: {
+    flex: 1,
+    color: "#28533B",
+    fontSize: 13,
+    fontWeight: "800",
+    textAlign: "right",
   },
   mediaRow: {
     gap: 10,

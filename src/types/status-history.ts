@@ -33,7 +33,9 @@ export interface HistoryFlow {
   pickup_request_id: number | null;
   food_name: string | null;
   posted_at: string | null;
+  donor_user_id?: number | null;
   donor_organization_name: string | null;
+  receiver_user_id?: number | null;
   receiver_organization_name: string | null;
   current_status: JourneyStatus | null;
   status_timestamps: Partial<Record<JourneyStatus, string>>;
