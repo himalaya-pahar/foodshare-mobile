@@ -43,7 +43,7 @@ function FormField({ label, ...props }: FormFieldProps) {
       <TextInput
         {...props}
         accessibilityLabel={label}
-        placeholderTextColor="#6B7280"
+        placeholderTextColor="#94A399"
         style={styles.input}
       />
     </View>
@@ -70,7 +70,7 @@ function PasswordField({
         <TextInput
           {...props}
           accessibilityLabel={label}
-          placeholderTextColor="#6B7280"
+          placeholderTextColor="#94A399"
           secureTextEntry={!visible}
           style={[styles.input, styles.passwordInput]}
         />
@@ -204,9 +204,20 @@ export default function SignupScreen({ onBack }: SignupScreenProps) {
         <ScrollView
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
           <View style={styles.form}>
-            <Text style={styles.brand}>FoodShare</Text>
+            <View style={styles.heroBanner}>
+              <View style={styles.logoRow}>
+                <View style={styles.logoMark}>
+                  <Text style={styles.logoLetter}>F</Text>
+                </View>
+                <Text style={styles.brandName}>FoodShare</Text>
+              </View>
+              <Text style={styles.heroTagline}>
+                Join our community to reduce{"\n"}food waste and feed those in need.
+              </Text>
+            </View>
 
             <Text style={styles.title}>
               {success ? "Account created" : "Create an account"}
@@ -333,13 +344,15 @@ export default function SignupScreen({ onBack }: SignupScreenProps) {
                 />
 
                 {error ? (
-                  <Text
-                    style={styles.error}
-                    accessibilityRole="alert"
-                    accessibilityLiveRegion="polite"
-                  >
-                    {error}
-                  </Text>
+                  <View style={styles.errorBox}>
+                    <Text
+                      style={styles.error}
+                      accessibilityRole="alert"
+                      accessibilityLiveRegion="polite"
+                    >
+                      {error}
+                    </Text>
+                  </View>
                 ) : null}
 
                 <Pressable
@@ -350,7 +363,8 @@ export default function SignupScreen({ onBack }: SignupScreenProps) {
                   onPress={() => void handleSignup()}
                   style={({ pressed }) => [
                     styles.button,
-                    (pressed || busy) && styles.dimmed,
+                    pressed && !busy && styles.buttonPressed,
+                    busy && styles.dimmed,
                   ]}
                 >
                   {busy ? (
@@ -371,13 +385,15 @@ export default function SignupScreen({ onBack }: SignupScreenProps) {
               onPress={goBack}
               style={({ pressed }) => [
                 styles.backButton,
-                (pressed || busy) && styles.dimmed,
+                pressed && styles.backPressed,
+                busy && styles.dimmed,
               ]}
             >
               <Text style={styles.backText}>
                 {success
                   ? "Back to login"
-                  : "Already have an account? Log in"}
+                  : "Already have an account? "}
+                {!success ? <Text style={styles.backBold}>Log in</Text> : null}
               </Text>
             </Pressable>
           </View>
@@ -393,7 +409,7 @@ const styles = StyleSheet.create({
   },
   screen: {
     flex: 1,
-    backgroundColor: "#F7FAF7",
+    backgroundColor: "#F4F7F3",
   },
   container: {
     flexGrow: 1,
@@ -405,40 +421,72 @@ const styles = StyleSheet.create({
     maxWidth: 440,
     alignSelf: "center",
   },
-  brand: {
-    fontSize: 30,
+  heroBanner: {
+    gap: 14,
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 32,
+    backgroundColor: "#174B36",
+  },
+  logoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  logoMark: {
+    width: 38,
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.18)",
+  },
+  logoLetter: {
+    color: "#FFFFFF",
+    fontSize: 20,
     fontWeight: "800",
-    color: "#166534",
-    marginBottom: 24,
+  },
+  brandName: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    letterSpacing: -0.5,
+  },
+  heroTagline: {
+    color: "#C5E5D0",
+    fontSize: 15,
+    lineHeight: 22,
   },
   title: {
-    fontSize: 26,
-    fontWeight: "700",
+    fontSize: 28,
+    fontWeight: "800",
     color: "#17251B",
     marginBottom: 8,
+    letterSpacing: -0.6,
   },
   message: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 15,
+    lineHeight: 23,
     color: "#526057",
     marginBottom: 24,
   },
   label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#17251B",
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#3A5244",
     marginBottom: 8,
+    letterSpacing: 0.2,
   },
   field: {
     marginBottom: 18,
   },
   input: {
     backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#CBD5CE",
-    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "#D6E2D9",
+    borderRadius: 14,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 15,
     fontSize: 16,
     color: "#17251B",
   },
@@ -455,60 +503,83 @@ const styles = StyleSheet.create({
   },
   roleButton: {
     flex: 1,
-    minHeight: 48,
+    minHeight: 52,
     padding: 12,
-    borderWidth: 1,
-    borderColor: "#CBD5CE",
-    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "#D6E2D9",
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#FFFFFF",
   },
   roleSelected: {
-    borderColor: "#166534",
-    backgroundColor: "#DCFCE7",
+    borderColor: "#176B43",
+    backgroundColor: "#E4F7EC",
   },
   roleText: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
     color: "#526057",
   },
   roleTextSelected: {
-    color: "#166534",
+    color: "#176B43",
+    fontWeight: "800",
+  },
+  errorBox: {
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+    backgroundColor: "#FFF0EE",
   },
   error: {
     color: "#B42318",
     fontSize: 14,
     lineHeight: 20,
-    marginBottom: 16,
   },
   button: {
-    backgroundColor: "#166534",
-    borderRadius: 12,
-    minHeight: 52,
+    backgroundColor: "#176B43",
+    borderRadius: 16,
+    minHeight: 56,
     padding: 16,
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#0D3B22",
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 4,
+  },
+  buttonPressed: {
+    opacity: 0.88,
+    transform: [{ scale: 0.98 }],
   },
   buttonText: {
     color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 17,
+    fontWeight: "800",
+    letterSpacing: -0.2,
   },
   backButton: {
-    minHeight: 48,
+    minHeight: 52,
     padding: 16,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 8,
   },
+  backPressed: {
+    opacity: 0.7,
+  },
   backText: {
-    color: "#166534",
+    color: "#526057",
     fontSize: 15,
-    fontWeight: "600",
     textAlign: "center",
   },
-  dimmed: {
-    opacity: 0.65,
+  backBold: {
+    color: "#176B43",
+    fontWeight: "800",
   },
-});         
+  dimmed: {
+    opacity: 0.6,
+  },
+});
+

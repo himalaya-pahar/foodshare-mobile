@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useFocusEffect } from "expo-router";
+import { useVideoPlayer, VideoView } from "expo-video";
 import DateTimePicker from "@expo/ui/community/datetime-picker";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Modal,
   Platform,
   Pressable,
@@ -28,14 +30,43 @@ import {
   rejectPickupRequest,
   updateDonation,
 } from "@/services/donations";
+import { getDonationMedia } from "@/services/donation-media";
 import type {
   DonationFeedItem,
   DonationInput,
   PickupRequest,
 } from "@/types/donation";
+import type { DonationMedia } from "@/types/donation-media";
 import type { PaginatedResponse } from "@/types/pagination";
 
 const PAGE_SIZE = 20;
+
+type FeedDonation = DonationFeedItem & {
+  media: DonationMedia[];
+};
+
+function DonationVideoPreview({
+  uri,
+  foodName,
+}: {
+  uri: string;
+  foodName: string;
+}) {
+  const player = useVideoPlayer(uri, (createdPlayer) => {
+    createdPlayer.muted = true;
+  });
+
+  return (
+    <VideoView
+      accessibilityLabel={`Video of ${foodName}`}
+      contentFit="cover"
+      nativeControls
+      player={player}
+      style={styles.heroMediaVideo}
+      surfaceType="textureView"
+    />
+  );
+}
 
 type DonationForm = {
   foodName: string;
@@ -626,7 +657,7 @@ function DonationCard({
   onMedia,
   onComplete,
 }: {
-  donation: DonationFeedItem;
+  donation: FeedDonation;
   canManage: boolean;
   onEdit: () => void;
   onCancel: () => void;
@@ -637,56 +668,95 @@ function DonationCard({
   const editable = canManage && donation.status === "AVAILABLE";
   const canComplete = canManage && donation.status === "COLLECTED";
 
+  const images = donation.media.filter((item) => item.media_type === "IMAGE");
+  const videos = donation.media.filter((item) => item.media_type === "VIDEO");
+
   return (
     <View style={styles.donationCard}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.donationIdTop}>Donation ID {donation.id}</Text>
-        <View style={[styles.statusBadge, styles[`status${donation.status}`]]}>
-          <Text style={styles.statusText}>{statusLabel(donation.status)}</Text>
-        </View>
-      </View>
-      <View style={styles.donationIdentity}>
-        <Text style={styles.foodName}>{donation.food_name}</Text>
-        <Text style={styles.areaText} numberOfLines={1}>{donation.pickup_area}</Text>
-        <Text style={styles.quantityText}>{donation.quantity} {donation.unit}</Text>
-      </View>
+      {images.length > 0 || videos.length > 0 ? (
+        <ScrollView
+          horizontal
+          contentContainerStyle={styles.mediaContainer}
+          nestedScrollEnabled
+          showsHorizontalScrollIndicator={false}
+          snapToInterval={340}
+          decelerationRate="fast"
+        >
+          {images.map((item) => (
+            <Image
+              key={item.id}
+              accessibilityLabel={`Photo of ${donation.food_name}`}
+              source={{ uri: item.media_url }}
+              style={styles.heroMediaImage}
+            />
+          ))}
+          {videos.map((item) => (
+            <DonationVideoPreview
+              key={item.id}
+              foodName={donation.food_name}
+              uri={item.media_url}
+            />
+          ))}
+        </ScrollView>
+      ) : null}
 
-      <View style={styles.schedulePanel}>
-        <View style={styles.scheduleRow}>
-          <Text style={styles.scheduleLabel}>POSTED</Text>
-          <Text style={styles.scheduleValue}>{formatBangladeshDateTime(donation.created_at)}</Text>
+      <View style={styles.cardContent}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.donationIdTop}>Donation ID {donation.id}</Text>
+          <View style={[styles.statusBadge, styles[`status${donation.status}`]]}>
+            <Text style={styles.statusText}>{statusLabel(donation.status)}</Text>
+          </View>
         </View>
-        <View style={styles.scheduleDivider} />
-        <View style={styles.scheduleRow}>
-          <Text style={styles.scheduleLabel}>PICKUP BY</Text>
-          <Text style={styles.scheduleValue}>{formatBangladeshDateTime(donation.pickup_deadline)}</Text>
-        </View>
-      </View>
 
-      <View style={styles.cardActions}>
-        <Pressable onPress={onRequests} style={styles.secondaryButton}>
-          <Text style={styles.secondaryButtonText}>Requests</Text>
-        </Pressable>
-        {canManage ? (
-          <Pressable onPress={onMedia} style={styles.secondaryButton}>
-            <Text style={styles.secondaryButtonText}>Media</Text>
+        <View style={styles.donationIdentity}>
+          <Text style={styles.foodName}>{donation.food_name}</Text>
+          <Text style={styles.areaText} numberOfLines={1}>{donation.pickup_area}</Text>
+          <Text style={styles.quantityText}>{donation.quantity} {donation.unit}</Text>
+        </View>
+
+        <View style={styles.detailsPanel}>
+          <View style={styles.metaRow}>
+            <View style={styles.metaItem}>
+              <Text style={styles.metaLabel}>POSTED</Text>
+              <Text style={styles.metaValue}>
+                {formatBangladeshDateTime(donation.created_at)}
+              </Text>
+            </View>
+            <View style={styles.metaDivider} />
+            <View style={styles.metaItem}>
+              <Text style={styles.metaLabel}>PICKUP BY</Text>
+              <Text style={styles.metaValue} numberOfLines={1}>
+                {formatBangladeshDateTime(donation.pickup_deadline)}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.cardActions}>
+          <Pressable onPress={onRequests} style={styles.secondaryButton}>
+            <Text style={styles.secondaryButtonText}>Requests</Text>
           </Pressable>
-        ) : null}
-        {editable ? (
-          <Pressable onPress={onEdit} style={styles.secondaryButton}>
-            <Text style={styles.secondaryButtonText}>Edit</Text>
-          </Pressable>
-        ) : null}
-        {editable ? (
-          <Pressable onPress={onCancel} style={styles.cancelButton}>
-            <Text style={styles.cancelText}>Cancel</Text>
-          </Pressable>
-        ) : null}
-        {canComplete ? (
-          <Pressable onPress={onComplete} style={styles.completeButton}>
-            <Text style={styles.completeText}>Complete</Text>
-          </Pressable>
-        ) : null}
+          {canManage ? (
+            <Pressable onPress={onMedia} style={styles.secondaryButton}>
+              <Text style={styles.secondaryButtonText}>Media</Text>
+            </Pressable>
+          ) : null}
+          {editable ? (
+            <Pressable onPress={onEdit} style={styles.secondaryButton}>
+              <Text style={styles.secondaryButtonText}>Edit</Text>
+            </Pressable>
+          ) : null}
+          {editable ? (
+            <Pressable onPress={onCancel} style={styles.cancelButton}>
+              <Text style={styles.cancelText}>Cancel</Text>
+            </Pressable>
+          ) : null}
+          {canComplete ? (
+            <Pressable onPress={onComplete} style={styles.completeButton}>
+              <Text style={styles.completeText}>Complete</Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
     </View>
   );
@@ -697,7 +767,7 @@ export default function RestaurantDonationsScreen() {
   const isRestaurant = user?.role === "RESTAURANT";
   const canManage = isRestaurant;
   const canMonitor = isRestaurant;
-  const [page, setPage] = useState<PaginatedResponse<DonationFeedItem> | null>(null);
+  const [page, setPage] = useState<PaginatedResponse<FeedDonation> | null>(null);
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -708,6 +778,21 @@ export default function RestaurantDonationsScreen() {
   const [busyDonationId, setBusyDonationId] = useState<number | null>(null);
 
   const reload = useCallback(() => setRevision((current) => current + 1), []);
+
+  const addMediaToDonations = useCallback(
+    async (items: DonationFeedItem[]): Promise<FeedDonation[]> =>
+      Promise.all(
+        items.map(async (donation) => {
+          try {
+            const media = await getDonationMedia(donation.id);
+            return { ...donation, media };
+          } catch {
+            return { ...donation, media: [] };
+          }
+        }),
+      ),
+    [],
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -725,7 +810,9 @@ export default function RestaurantDonationsScreen() {
         setError(null);
         try {
           const result = await getRestaurantDonations({ limit: PAGE_SIZE, offset });
-          if (active) setPage(result);
+          if (!active) return;
+          const itemsWithMedia = await addMediaToDonations(result.items);
+          if (active) setPage({ ...result, items: itemsWithMedia });
         } catch (requestError) {
           if (active) {
             setError(
@@ -743,7 +830,7 @@ export default function RestaurantDonationsScreen() {
       return () => {
         active = false;
       };
-    }, [canMonitor, offset, revision]),
+    }, [canMonitor, offset, revision, addMediaToDonations]),
   );
 
   async function saveDonation(input: DonationInput) {
@@ -875,23 +962,27 @@ export default function RestaurantDonationsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#F4F7F3" },
-  container: { width: "100%", maxWidth: 640, alignSelf: "center", paddingHorizontal: 22, paddingBottom: 32, gap: 18 },
+  container: { width: "100%", maxWidth: 640, alignSelf: "center", paddingHorizontal: 22, paddingBottom: 36, gap: 18 },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  logo: { width: 34, height: 34, borderRadius: 11, alignItems: "center", justifyContent: "center", backgroundColor: "#176B43" },
-  logoText: { color: "#FFFFFF", fontSize: 18, fontWeight: "800" },
-  brand: { color: "#183B2A", fontSize: 20, fontWeight: "800" },
-  hero: { gap: 8, borderRadius: 25, padding: 22, backgroundColor: "#174B36" },
-  heroLabel: { color: "#B9DFC7", fontSize: 11, fontWeight: "800", letterSpacing: 1.1 },
-  heroTitle: { color: "#FFFFFF", fontSize: 28, fontWeight: "800", letterSpacing: -0.8 },
-  heroText: { color: "#D7E9DC", fontSize: 15, lineHeight: 22 },
+  logo: { width: 36, height: 36, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: "#176B43" },
+  logoText: { color: "#FFFFFF", fontSize: 19, fontWeight: "800" },
+  brand: { color: "#183B2A", fontSize: 21, fontWeight: "800", letterSpacing: -0.4 },
+  hero: { gap: 10, borderRadius: 26, padding: 24, backgroundColor: "#174B36", shadowColor: "#0A2E1C", shadowOpacity: 0.25, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
+  heroLabel: { color: "#B9DFC7", fontSize: 11, fontWeight: "800", letterSpacing: 1.2 },
+  heroTitle: { color: "#FFFFFF", fontSize: 30, fontWeight: "800", letterSpacing: -0.8 },
+  heroText: { color: "#C5E5D0", fontSize: 15, lineHeight: 23 },
   listHeader: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 8 },
-  sectionLabel: { color: "#6A8374", fontSize: 11, fontWeight: "800", letterSpacing: 1 },
-  sectionTitle: { marginTop: 4, color: "#173526", fontSize: 23, fontWeight: "800" },
-  addButton: { borderRadius: 13, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: "#176B43" },
+  sectionLabel: { color: "#6A8374", fontSize: 11, fontWeight: "800", letterSpacing: 1.1 },
+  sectionTitle: { marginTop: 4, color: "#173526", fontSize: 24, fontWeight: "800", letterSpacing: -0.4 },
+  addButton: { borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: "#176B43", shadowColor: "#0D3B22", shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
   addButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
-  donationCard: { gap: 14, borderWidth: 1, borderColor: "#E5EEE7", borderRadius: 24, padding: 17, backgroundColor: "#FFFFFF" },
+  donationCard: { overflow: "hidden", borderWidth: 1, borderColor: "#E5EEE7", borderRadius: 24, backgroundColor: "#FFFFFF", shadowColor: "#173526", shadowOpacity: 0.05, shadowRadius: 14, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
+  cardContent: { padding: 20, gap: 16 },
+  mediaContainer: { backgroundColor: "#E4EEE6" },
+  heroMediaImage: { width: 340, height: 220, backgroundColor: "#E4EEE6" },
+  heroMediaVideo: { width: 340, height: 220, backgroundColor: "#1C4834" },
   cardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
-  statusBadge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, backgroundColor: "#E4F2E8" },
+  statusBadge: { borderRadius: 999, paddingHorizontal: 11, paddingVertical: 7, backgroundColor: "#E4F2E8" },
   statusAVAILABLE: { backgroundColor: "#E2F4E8" },
   statusRESERVED: { backgroundColor: "#FFF0D4" },
   statusCOLLECTED: { backgroundColor: "#E1EEFF" },
@@ -900,69 +991,70 @@ const styles = StyleSheet.create({
   statusCANCELLED: { backgroundColor: "#FFE8E5" },
   statusText: { color: "#24593B", fontSize: 12, fontWeight: "800" },
   areaText: { color: "#66786D", fontSize: 13, fontWeight: "700" },
-  foodName: { color: "#173526", fontSize: 21, fontWeight: "800" },
+  foodName: { color: "#173526", fontSize: 22, fontWeight: "800", letterSpacing: -0.4 },
   donationIdentity: { gap: 5 },
   donationIdTop: { color: "#6E8275", fontSize: 11, fontWeight: "700", letterSpacing: 0.3 },
   quantityText: { color: "#496957", fontSize: 15, fontWeight: "700" },
-  schedulePanel: { borderRadius: 15, padding: 13, backgroundColor: "#F3F7F4" },
-  scheduleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
-  scheduleLabel: { color: "#7A8C80", fontSize: 10, fontWeight: "800", letterSpacing: 0.7 },
-  scheduleValue: { flex: 1, color: "#355442", fontSize: 12, fontWeight: "700", textAlign: "right" },
-  scheduleDivider: { height: 1, marginVertical: 10, backgroundColor: "#DDE8DF" },
-  cardActions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 1 },
-  secondaryButton: { borderRadius: 10, paddingHorizontal: 11, paddingVertical: 9, backgroundColor: "#EDF7F0" },
-  secondaryButtonText: { color: "#176B43", fontSize: 13, fontWeight: "800" },
-  cancelButton: { borderRadius: 10, paddingHorizontal: 11, paddingVertical: 9, backgroundColor: "#FFF0EE" },
-  cancelText: { color: "#A43C31", fontSize: 13, fontWeight: "800" },
-  completeButton: { borderRadius: 10, paddingHorizontal: 11, paddingVertical: 9, backgroundColor: "#176B43" },
-  completeText: { color: "#FFFFFF", fontSize: 13, fontWeight: "800" },
-  loadingBox: { minHeight: 150, alignItems: "center", justifyContent: "center", gap: 12, borderRadius: 22, backgroundColor: "#FFFFFF" },
+  detailsPanel: { borderRadius: 16, padding: 14, backgroundColor: "#F3F7F4" },
+  metaRow: { flexDirection: "row", alignItems: "stretch" },
+  metaItem: { flex: 1, gap: 4 },
+  metaDivider: { width: 1, marginHorizontal: 12, backgroundColor: "#DCE7DE" },
+  metaLabel: { color: "#7A8C80", fontSize: 10, fontWeight: "800", letterSpacing: 0.7 },
+  metaValue: { color: "#284634", fontSize: 13, fontWeight: "700" },
+  cardActions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 2 },
+  secondaryButton: { borderRadius: 12, paddingHorizontal: 13, paddingVertical: 10, backgroundColor: "#EDF7F0" },
+  secondaryButtonText: { color: "#176B43", fontSize: 14, fontWeight: "800" },
+  cancelButton: { borderRadius: 12, paddingHorizontal: 13, paddingVertical: 10, backgroundColor: "#FFF0EE" },
+  cancelText: { color: "#A43C31", fontSize: 14, fontWeight: "800" },
+  completeButton: { borderRadius: 12, paddingHorizontal: 13, paddingVertical: 10, backgroundColor: "#176B43" },
+  completeText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
+  loadingBox: { minHeight: 160, alignItems: "center", justifyContent: "center", gap: 14, borderRadius: 24, backgroundColor: "#FFFFFF", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
   loadingText: { color: "#66786D", fontSize: 14 },
-  errorBox: { gap: 8, borderRadius: 18, padding: 16, backgroundColor: "#FFF2F0" },
+  errorBox: { gap: 10, borderRadius: 20, padding: 18, backgroundColor: "#FFF2F0" },
   errorText: { color: "#8A342A", fontSize: 14, lineHeight: 20 },
   retryText: { color: "#9B2C22", fontSize: 14, fontWeight: "800" },
-  emptyBox: { alignItems: "center", borderRadius: 22, paddingHorizontal: 28, paddingVertical: 34, backgroundColor: "#FFFFFF" },
-  emptyTitle: { color: "#173526", fontSize: 18, fontWeight: "800" },
-  emptyText: { marginTop: 7, color: "#66786D", fontSize: 14, lineHeight: 21, textAlign: "center" },
+  emptyBox: { alignItems: "center", borderRadius: 24, paddingHorizontal: 32, paddingVertical: 40, backgroundColor: "#FFFFFF", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
+  emptyTitle: { color: "#173526", fontSize: 19, fontWeight: "800" },
+  emptyText: { marginTop: 8, color: "#66786D", fontSize: 14, lineHeight: 22, textAlign: "center" },
   paginationRow: { flexDirection: "row", justifyContent: "space-between", gap: 12 },
-  pageButton: { flex: 1, alignItems: "center", borderRadius: 12, paddingVertical: 12, backgroundColor: "#E4F2E8" },
-  pageButtonText: { color: "#176B43", fontSize: 14, fontWeight: "800" },
+  pageButton: { flex: 1, alignItems: "center", borderRadius: 14, paddingVertical: 14, backgroundColor: "#E4F2E8" },
+  pageButtonText: { color: "#176B43", fontSize: 15, fontWeight: "800" },
   disabledButton: { opacity: 0.45 },
-  buttonPressed: { opacity: 0.74 },
+  buttonPressed: { opacity: 0.74, transform: [{ scale: 0.98 }] },
   accessBox: { flex: 1, alignItems: "center", justifyContent: "center", padding: 30 },
-  accessTitle: { color: "#173526", fontSize: 21, fontWeight: "800" },
+  accessTitle: { color: "#173526", fontSize: 22, fontWeight: "800" },
   accessText: { marginTop: 8, color: "#66786D", fontSize: 15, textAlign: "center" },
-  modalScreen: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(13, 36, 24, 0.46)" },
+  modalScreen: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(13, 36, 24, 0.5)" },
   modalCard: { maxHeight: "92%", borderTopLeftRadius: 28, borderTopRightRadius: 28, backgroundColor: "#F7FAF7" },
-  modalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16, paddingHorizontal: 22, paddingVertical: 19, borderBottomWidth: 1, borderBottomColor: "#E3ECE5" },
-  modalEyebrow: { color: "#6A8374", fontSize: 11, fontWeight: "800", letterSpacing: 1 },
-  modalTitle: { marginTop: 4, color: "#173526", fontSize: 21, fontWeight: "800" },
-  closeButton: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: "#E8F0EA" },
+  modalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16, paddingHorizontal: 22, paddingVertical: 20, borderBottomWidth: 1, borderBottomColor: "#E3ECE5" },
+  modalEyebrow: { color: "#6A8374", fontSize: 11, fontWeight: "800", letterSpacing: 1.1 },
+  modalTitle: { marginTop: 4, color: "#173526", fontSize: 22, fontWeight: "800" },
+  closeButton: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: "#E8F0EA" },
   closeButtonText: { color: "#31503E", fontSize: 26, fontWeight: "400", lineHeight: 28 },
-  formContent: { padding: 22, paddingBottom: 34, gap: 15 },
-  formField: { gap: 7 },
-  inputLabel: { color: "#526B5A", fontSize: 13, fontWeight: "800" },
-  input: { minHeight: 50, borderWidth: 1, borderColor: "#D6E2D9", borderRadius: 13, paddingHorizontal: 13, color: "#1E3829", fontSize: 15, backgroundColor: "#FFFFFF" },
-  multilineInput: { minHeight: 88, paddingTop: 12 },
+  formContent: { padding: 22, paddingBottom: 36, gap: 16 },
+  formField: { gap: 8 },
+  inputLabel: { color: "#3A5244", fontSize: 13, fontWeight: "800", letterSpacing: 0.2 },
+  input: { minHeight: 52, borderWidth: 1.5, borderColor: "#D6E2D9", borderRadius: 14, paddingHorizontal: 16, color: "#1E3829", fontSize: 15, backgroundColor: "#FFFFFF" },
+  multilineInput: { minHeight: 90, paddingTop: 14 },
   twoColumnRow: { flexDirection: "row", gap: 12 },
   halfField: { flex: 1 },
-  dateButton: { minHeight: 50, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderWidth: 1, borderColor: "#D6E2D9", borderRadius: 13, paddingHorizontal: 13, backgroundColor: "#FFFFFF" },
+  dateButton: { minHeight: 52, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderWidth: 1.5, borderColor: "#D6E2D9", borderRadius: 14, paddingHorizontal: 16, backgroundColor: "#FFFFFF" },
   dateButtonText: { color: "#1E3829", fontSize: 15 },
   dateButtonIcon: { color: "#176B43", fontSize: 18, fontWeight: "800" },
-  formError: { borderRadius: 12, padding: 12, color: "#9B2C22", fontSize: 14, lineHeight: 20, backgroundColor: "#FFF0EE" },
-  saveButton: { minHeight: 54, alignItems: "center", justifyContent: "center", marginTop: 4, borderRadius: 15, backgroundColor: "#176B43" },
-  saveButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
-  requestContent: { padding: 22, paddingBottom: 34, gap: 12 },
+  formError: { borderRadius: 12, padding: 14, color: "#9B2C22", fontSize: 14, lineHeight: 20, backgroundColor: "#FFF0EE" },
+  saveButton: { minHeight: 56, alignItems: "center", justifyContent: "center", marginTop: 4, borderRadius: 16, backgroundColor: "#176B43", shadowColor: "#0D3B22", shadowOpacity: 0.18, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 4 },
+  saveButtonText: { color: "#FFFFFF", fontSize: 17, fontWeight: "800" },
+  requestContent: { padding: 22, paddingBottom: 36, gap: 14 },
   requestSubtitle: { color: "#66786D", fontSize: 14, marginBottom: 4 },
-  requestCard: { gap: 8, borderRadius: 17, padding: 15, backgroundColor: "#FFFFFF" },
+  requestCard: { gap: 10, borderRadius: 18, padding: 16, backgroundColor: "#FFFFFF", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 1 },
   requestHeader: { flexDirection: "row", justifyContent: "space-between", gap: 10 },
-  requestName: { color: "#1E3829", fontSize: 16, fontWeight: "800" },
+  requestName: { color: "#1E3829", fontSize: 17, fontWeight: "800" },
   requestStatus: { color: "#176B43", fontSize: 12, fontWeight: "800" },
   requestTime: { color: "#66786D", fontSize: 13 },
   requestMessage: { color: "#496957", fontSize: 14, lineHeight: 20 },
-  requestActions: { flexDirection: "row", gap: 8, marginTop: 4 },
-  rejectButton: { flex: 1, minHeight: 42, alignItems: "center", justifyContent: "center", borderRadius: 11, backgroundColor: "#FFF0EE" },
+  requestActions: { flexDirection: "row", gap: 10, marginTop: 4 },
+  rejectButton: { flex: 1, minHeight: 46, alignItems: "center", justifyContent: "center", borderRadius: 13, backgroundColor: "#FFF0EE" },
   rejectText: { color: "#A43C31", fontSize: 14, fontWeight: "800" },
-  acceptButton: { flex: 1, minHeight: 42, alignItems: "center", justifyContent: "center", borderRadius: 11, backgroundColor: "#176B43" },
+  acceptButton: { flex: 1, minHeight: 46, alignItems: "center", justifyContent: "center", borderRadius: 13, backgroundColor: "#176B43" },
   acceptText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
 });

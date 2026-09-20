@@ -70,13 +70,18 @@ export default function LogoutButton() {
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 54,
+    minHeight: 56,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     borderRadius: 16,
-    paddingHorizontal: 18,
+    paddingHorizontal: 20,
     backgroundColor: "#FDE2DE",
+    shadowColor: "#A3382C",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
   },
   buttonText: {
     color: "#A3382C",
@@ -89,7 +94,7 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.72,
-    transform: [{ scale: 0.99 }],
+    transform: [{ scale: 0.98 }],
   },
   disabled: {
     opacity: 0.55,

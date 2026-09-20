@@ -49,7 +49,7 @@ function DonationVideoPreview({
       contentFit="cover"
       nativeControls
       player={player}
-      style={styles.mediaVideo}
+      style={styles.heroMediaVideo}
       surfaceType="textureView"
     />
   );
@@ -65,7 +65,8 @@ function DonationCard({
   const images = donation.media.filter((item) => item.media_type === "IMAGE");
   const videos = donation.media.filter((item) => item.media_type === "VIDEO");
   const postedBy = donation.restaurant_organization_name?.trim() ||
-    donation.restaurant_full_name?.trim();
+    donation.restaurant_full_name?.trim() ||
+    `Restaurant account ID ${donation.restaurant_id}`;
 
   return (
     <Pressable
@@ -77,46 +78,21 @@ function DonationCard({
         pressed && styles.buttonPressed,
       ]}
     >
-      <View style={styles.cardTopRow}>
-        <Text style={styles.donationIdTop}>Donation ID {donation.id}</Text>
-        <View style={styles.availableBadge}>
-          <View style={styles.availableDot} />
-          <Text style={styles.availableText}>Available</Text>
-        </View>
-      </View>
-
-      <View style={styles.cardIdentity}>
-        <Text style={styles.foodName}>{donation.food_name}</Text>
-        <Text style={styles.cardArea} numberOfLines={1}>
-          {donation.pickup_area}
-        </Text>
-        {donation.description ? (
-          <Text style={styles.description} numberOfLines={3}>
-            {donation.description}
-          </Text>
-        ) : null}
-      </View>
-
-      {postedBy ? (
-        <View style={styles.postedByRow}>
-          <Text style={styles.postedByLabel}>POSTED BY</Text>
-          <Text style={styles.postedByName} numberOfLines={1}>{postedBy}</Text>
-        </View>
-      ) : null}
-
       {images.length > 0 || videos.length > 0 ? (
         <ScrollView
           horizontal
-          contentContainerStyle={styles.mediaRow}
+          contentContainerStyle={styles.mediaContainer}
           nestedScrollEnabled
           showsHorizontalScrollIndicator={false}
+          snapToInterval={340}
+          decelerationRate="fast"
         >
           {images.map((item) => (
             <Image
               key={item.id}
               accessibilityLabel={`Photo of ${donation.food_name}`}
               source={{ uri: item.media_url }}
-              style={styles.mediaImage}
+              style={styles.heroMediaImage}
             />
           ))}
           {videos.map((item) => (
@@ -129,33 +105,60 @@ function DonationCard({
         </ScrollView>
       ) : null}
 
-      <View style={styles.detailsPanel}>
-        <View style={styles.metaRow}>
-          <View style={styles.metaItem}>
-            <Text style={styles.metaLabel}>QUANTITY</Text>
-            <Text style={styles.metaValue}>
-              {donation.quantity} {donation.unit}
-            </Text>
-          </View>
-
-          <View style={styles.metaDivider} />
-
-          <View style={styles.metaItem}>
-            <Text style={styles.metaLabel}>PICKUP BY</Text>
-            <Text style={styles.metaValue} numberOfLines={1}>
-              {formatBangladeshDateTime(donation.pickup_deadline)}
-            </Text>
+      <View style={styles.cardContent}>
+        <View style={styles.cardTopRow}>
+          <Text style={styles.donationIdTop}>Donation ID {donation.id}</Text>
+          <View style={styles.availableBadge}>
+            <View style={styles.availableDot} />
+            <Text style={styles.availableText}>Available</Text>
           </View>
         </View>
-      </View>
 
-      <View style={styles.locationSection}>
-        <Text style={styles.locationLabel}>PICKUP LOCATION</Text>
-        <Text style={styles.address} numberOfLines={2}>{donation.pickup_address}</Text>
-      </View>
+        <View style={styles.cardIdentity}>
+          <Text style={styles.foodName}>{donation.food_name}</Text>
+          <Text style={styles.cardArea} numberOfLines={1}>
+            {donation.pickup_area}
+          </Text>
+          {donation.description ? (
+            <Text style={styles.description} numberOfLines={3}>
+              {donation.description}
+            </Text>
+          ) : null}
+        </View>
 
-      <View style={styles.cardFooter}>
-        <Text style={styles.postedAt}>Posted {formatBangladeshDateTime(donation.created_at)}</Text>
+        <View style={styles.detailsPanel}>
+          <View style={styles.metaRow}>
+            <View style={styles.metaItem}>
+              <Text style={styles.metaLabel}>QUANTITY</Text>
+              <Text style={styles.metaValue}>
+                {donation.quantity} {donation.unit}
+              </Text>
+            </View>
+
+            <View style={styles.metaDivider} />
+
+            <View style={styles.metaItem}>
+              <Text style={styles.metaLabel}>PICKUP BY</Text>
+              <Text style={styles.metaValue} numberOfLines={1}>
+                {formatBangladeshDateTime(donation.pickup_deadline)}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.locationSection}>
+          <Text style={styles.locationLabel}>PICKUP LOCATION</Text>
+          <Text style={styles.address} numberOfLines={2}>{donation.pickup_address}</Text>
+        </View>
+
+        <View style={styles.postedByRow}>
+          <Text style={styles.postedByLabel}>POSTED BY</Text>
+          <Text style={styles.postedByName} numberOfLines={1}>{postedBy}</Text>
+        </View>
+
+        <View style={styles.cardFooter}>
+          <Text style={styles.postedAt}>Posted {formatBangladeshDateTime(donation.created_at)}</Text>
+        </View>
       </View>
     </Pressable>
   );
@@ -449,7 +452,7 @@ const styles = StyleSheet.create({
     maxWidth: 640,
     alignSelf: "center",
     paddingHorizontal: 22,
-    paddingBottom: 32,
+    paddingBottom: 36,
     gap: 18,
   },
   brandRow: {
@@ -458,46 +461,51 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   logo: {
-    width: 34,
-    height: 34,
+    width: 36,
+    height: 36,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 11,
+    borderRadius: 12,
     backgroundColor: "#176B43",
   },
   logoText: {
     color: "#FFFFFF",
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: "800",
   },
   brand: {
     color: "#183B2A",
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: "800",
     letterSpacing: -0.4,
   },
   hero: {
-    gap: 8,
-    borderRadius: 25,
-    padding: 22,
+    gap: 10,
+    borderRadius: 26,
+    padding: 24,
     backgroundColor: "#174B36",
+    shadowColor: "#0A2E1C",
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 6,
   },
   eyebrow: {
     color: "#B9DFC7",
     fontSize: 11,
     fontWeight: "800",
-    letterSpacing: 1.1,
+    letterSpacing: 1.2,
   },
   greeting: {
     color: "#FFFFFF",
-    fontSize: 29,
+    fontSize: 30,
     fontWeight: "800",
     letterSpacing: -0.8,
   },
   heroText: {
-    color: "#D7E9DC",
+    color: "#C5E5D0",
     fontSize: 15,
-    lineHeight: 22,
+    lineHeight: 23,
   },
   feedHeader: {
     flexDirection: "row",
@@ -508,15 +516,15 @@ const styles = StyleSheet.create({
   },
   searchRow: {
     flexDirection: "row",
-    gap: 9,
+    gap: 10,
   },
   searchInput: {
     flex: 1,
-    minHeight: 48,
-    borderWidth: 1,
+    minHeight: 52,
+    borderWidth: 1.5,
     borderColor: "#D6E2D9",
-    borderRadius: 13,
-    paddingHorizontal: 13,
+    borderRadius: 15,
+    paddingHorizontal: 16,
     color: "#1E3829",
     fontSize: 15,
     backgroundColor: "#FFFFFF",
@@ -524,44 +532,49 @@ const styles = StyleSheet.create({
   searchButton: {
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 13,
-    paddingHorizontal: 15,
+    borderRadius: 15,
+    paddingHorizontal: 18,
     backgroundColor: "#176B43",
+    shadowColor: "#0D3B22",
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
   },
   searchButtonText: {
     color: "#FFFFFF",
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "800",
   },
   activeFilterRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderRadius: 12,
-    paddingHorizontal: 13,
-    paddingVertical: 10,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     backgroundColor: "#E2F4E8",
   },
   activeFilterText: {
     color: "#176B43",
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "700",
   },
   clearFilterText: {
     color: "#176B43",
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "800",
   },
   sectionLabel: {
     color: "#6A8374",
     fontSize: 11,
     fontWeight: "800",
-    letterSpacing: 1,
+    letterSpacing: 1.1,
   },
   sectionTitle: {
     marginTop: 4,
     color: "#173526",
-    fontSize: 23,
+    fontSize: 24,
     fontWeight: "800",
     letterSpacing: -0.5,
   },
@@ -571,30 +584,37 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   loadingBox: {
-    minHeight: 176,
+    minHeight: 180,
     alignItems: "center",
     justifyContent: "center",
-    gap: 12,
-    borderRadius: 22,
+    gap: 14,
+    borderRadius: 24,
     backgroundColor: "#FFFFFF",
+    shadowColor: "#173526",
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 1,
   },
   loadingText: {
     color: "#66786D",
     fontSize: 14,
   },
   donationCard: {
-    gap: 14,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: "#E5EEE7",
     borderRadius: 24,
-    padding: 17,
     backgroundColor: "#FFFFFF",
     shadowColor: "#173526",
-    shadowOpacity: 0.05,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 7 },
-    elevation: 2,
+    shadowOpacity: 0.07,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 3,
+  },
+  cardContent: {
+    padding: 20,
+    gap: 16,
   },
   cardTopRow: {
     flexDirection: "row",
@@ -607,13 +627,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
     backgroundColor: "#E2F4E8",
   },
   availableDot: {
-    width: 7,
-    height: 7,
+    width: 8,
+    height: 8,
     borderRadius: 4,
     backgroundColor: "#20844F",
   },
@@ -629,7 +649,7 @@ const styles = StyleSheet.create({
   },
   foodName: {
     color: "#173526",
-    fontSize: 21,
+    fontSize: 22,
     fontWeight: "800",
     letterSpacing: -0.4,
   },
@@ -674,20 +694,17 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     textAlign: "right",
   },
-  mediaRow: {
-    gap: 10,
-  },
-  mediaImage: {
-    width: 158,
-    height: 116,
-    borderRadius: 14,
+  mediaContainer: {
     backgroundColor: "#E4EEE6",
   },
-  mediaVideo: {
-    width: 158,
-    height: 116,
-    borderRadius: 14,
-    overflow: "hidden",
+  heroMediaImage: {
+    width: 340,
+    height: 220,
+    backgroundColor: "#E4EEE6",
+  },
+  heroMediaVideo: {
+    width: 340,
+    height: 220,
     backgroundColor: "#1C4834",
   },
   metaRow: {
@@ -695,8 +712,8 @@ const styles = StyleSheet.create({
     alignItems: "stretch",
   },
   detailsPanel: {
-    borderRadius: 15,
-    padding: 13,
+    borderRadius: 16,
+    padding: 14,
     backgroundColor: "#F3F7F4",
   },
   metaItem: {
@@ -734,23 +751,23 @@ const styles = StyleSheet.create({
     letterSpacing: 0.7,
   },
   cardFooter: {
-    marginHorizontal: -17,
-    marginBottom: -17,
-    paddingHorizontal: 17,
-    paddingVertical: 10,
+    marginHorizontal: -20,
+    marginBottom: -20,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
     borderTopWidth: 1,
     borderTopColor: "#EDF2EE",
     backgroundColor: "#FAFCFA",
   },
   errorBox: {
-    gap: 9,
-    borderRadius: 20,
-    padding: 18,
+    gap: 10,
+    borderRadius: 22,
+    padding: 20,
     backgroundColor: "#FFF2F0",
   },
   errorTitle: {
     color: "#9B2C22",
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "800",
   },
   errorText: {
@@ -761,56 +778,61 @@ const styles = StyleSheet.create({
   retryButton: {
     alignSelf: "flex-start",
     marginTop: 4,
-    borderRadius: 10,
-    paddingHorizontal: 13,
-    paddingVertical: 9,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     backgroundColor: "#9B2C22",
   },
   retryButtonText: {
     color: "#FFFFFF",
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "800",
   },
   emptyBox: {
     alignItems: "center",
-    borderRadius: 22,
-    paddingHorizontal: 28,
-    paddingVertical: 34,
+    borderRadius: 24,
+    paddingHorizontal: 32,
+    paddingVertical: 40,
     backgroundColor: "#FFFFFF",
+    shadowColor: "#173526",
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 1,
   },
   emptyIcon: {
-    width: 46,
-    height: 46,
+    width: 54,
+    height: 54,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 16,
+    borderRadius: 18,
     backgroundColor: "#E2F4E8",
   },
   emptyIconText: {
     color: "#176B43",
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: "500",
   },
   emptyTitle: {
-    marginTop: 15,
+    marginTop: 16,
     color: "#173526",
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: "800",
   },
   emptyText: {
-    marginTop: 7,
+    marginTop: 8,
     color: "#66786D",
     fontSize: 14,
-    lineHeight: 21,
+    lineHeight: 22,
     textAlign: "center",
   },
   loadMoreButton: {
-    minHeight: 52,
+    minHeight: 56,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: "#B7D6C1",
-    borderRadius: 16,
+    borderRadius: 18,
     backgroundColor: "#EDF7F0",
   },
   loadMoreText: {
@@ -820,5 +842,6 @@ const styles = StyleSheet.create({
   },
   buttonPressed: {
     opacity: 0.75,
+    transform: [{ scale: 0.98 }],
   },
 });

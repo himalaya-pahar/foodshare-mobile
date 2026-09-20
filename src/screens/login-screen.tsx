@@ -67,9 +67,21 @@ export default function LoginScreen({ onSignup }: LoginScreenProps) {
         <ScrollView
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
           <View style={styles.form}>
-            <Text style={styles.brand}>FoodShare</Text>
+            <View style={styles.heroBanner}>
+              <View style={styles.logoRow}>
+                <View style={styles.logoMark}>
+                  <Text style={styles.logoLetter}>F</Text>
+                </View>
+                <Text style={styles.brand}>FoodShare</Text>
+              </View>
+              <Text style={styles.heroTagline}>
+                Connecting surplus food{"\n"}with communities that need it.
+              </Text>
+            </View>
+
             <Text style={styles.title}>Welcome back</Text>
             <Text style={styles.subtitle}>
               Log in to continue sharing food with your community.
@@ -80,7 +92,7 @@ export default function LoginScreen({ onSignup }: LoginScreenProps) {
               style={styles.input}
               accessibilityLabel="Email"
               placeholder="you@example.com"
-              placeholderTextColor="#6B7280"
+              placeholderTextColor="#94A399"
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -99,7 +111,7 @@ export default function LoginScreen({ onSignup }: LoginScreenProps) {
                 style={[styles.input, styles.passwordInput]}
                 accessibilityLabel="Password"
                 placeholder="Enter your password"
-                placeholderTextColor="#6B7280"
+                placeholderTextColor="#94A399"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -117,13 +129,15 @@ export default function LoginScreen({ onSignup }: LoginScreenProps) {
             </View>
 
             {error ? (
-              <Text
-                style={styles.error}
-                accessibilityRole="alert"
-                accessibilityLiveRegion="polite"
-              >
-                {error}
-              </Text>
+              <View style={styles.errorBox}>
+                <Text
+                  style={styles.error}
+                  accessibilityRole="alert"
+                  accessibilityLiveRegion="polite"
+                >
+                  {error}
+                </Text>
+              </View>
             ) : null}
 
             <Pressable
@@ -134,7 +148,8 @@ export default function LoginScreen({ onSignup }: LoginScreenProps) {
               accessibilityState={{ disabled: busy, busy }}
               style={({ pressed }) => [
                 styles.button,
-                (pressed || busy) && styles.buttonDimmed,
+                pressed && !busy && styles.buttonPressed,
+                busy && styles.buttonDimmed,
               ]}
             >
               {busy ? (
@@ -148,10 +163,14 @@ export default function LoginScreen({ onSignup }: LoginScreenProps) {
                 disabled={busy}
                 accessibilityRole="button"
                 accessibilityState={{ disabled: busy }}
-                style={styles.signupLink}
+                style={({ pressed }) => [
+                  styles.signupLink,
+                  pressed && styles.signupPressed,
+                ]}
             >
                 <Text style={styles.signupText}>
-                    Don’t have an account? Sign up
+                    Don't have an account?{" "}
+                    <Text style={styles.signupBold}>Sign up</Text>
                 </Text>
             </Pressable>
           </View>
@@ -167,7 +186,7 @@ const styles = StyleSheet.create({
   },
   screen: {
     flex: 1,
-    backgroundColor: "#F7FAF7",
+    backgroundColor: "#F4F7F3",
   },
   container: {
     flexGrow: 1,
@@ -179,37 +198,69 @@ const styles = StyleSheet.create({
     maxWidth: 440,
     alignSelf: "center",
   },
-  brand: {
-    fontSize: 32,
-    fontWeight: "800",
-    color: "#166534",
+  heroBanner: {
+    gap: 14,
+    borderRadius: 24,
+    padding: 24,
     marginBottom: 32,
+    backgroundColor: "#174B36",
+  },
+  logoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  logoMark: {
+    width: 38,
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.18)",
+  },
+  logoLetter: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontWeight: "800",
+  },
+  brand: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    letterSpacing: -0.5,
+  },
+  heroTagline: {
+    color: "#C5E5D0",
+    fontSize: 15,
+    lineHeight: 22,
   },
   title: {
-    fontSize: 26,
-    fontWeight: "700",
+    fontSize: 28,
+    fontWeight: "800",
     color: "#17251B",
     marginBottom: 8,
+    letterSpacing: -0.6,
   },
   subtitle: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 15,
+    lineHeight: 23,
     color: "#526057",
     marginBottom: 28,
   },
   label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#17251B",
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#3A5244",
     marginBottom: 8,
+    letterSpacing: 0.2,
   },
   input: {
     backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#CBD5CE",
-    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "#D6E2D9",
+    borderRadius: 14,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 15,
     fontSize: 16,
     color: "#17251B",
     marginBottom: 20,
@@ -222,39 +273,59 @@ const styles = StyleSheet.create({
     marginBottom: 0,
     paddingRight: 56,
   },
+  errorBox: {
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+    backgroundColor: "#FFF0EE",
+  },
   error: {
     color: "#B42318",
     fontSize: 14,
     lineHeight: 20,
-    marginBottom: 16,
   },
   button: {
-    backgroundColor: "#166534",
-    borderRadius: 12,
-    minHeight: 52,
+    backgroundColor: "#176B43",
+    borderRadius: 16,
+    minHeight: 56,
     padding: 16,
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#0D3B22",
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 4,
+  },
+  buttonPressed: {
+    opacity: 0.88,
+    transform: [{ scale: 0.98 }],
   },
   buttonDimmed: {
-    opacity: 0.65,
+    opacity: 0.6,
   },
   buttonText: {
     color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 17,
+    fontWeight: "800",
+    letterSpacing: -0.2,
   },
   signupLink: {
-  minHeight: 48,
-  paddingVertical: 16,
-  alignItems: "center",
-  justifyContent: "center",
-},
-signupText: {
-  color: "#166534",
-  fontSize: 15,
-  fontWeight: "600",
-  textAlign: "center",
-},
-  
+    minHeight: 52,
+    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  signupPressed: {
+    opacity: 0.7,
+  },
+  signupText: {
+    color: "#526057",
+    fontSize: 15,
+    textAlign: "center",
+  },
+  signupBold: {
+    color: "#176B43",
+    fontWeight: "800",
+  },
 });
