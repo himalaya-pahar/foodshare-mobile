@@ -43,3 +43,5 @@ example
 /android
 
 .env
+.venv/
+Ai_Integretion_Frontend/

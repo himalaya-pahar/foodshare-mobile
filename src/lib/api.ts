@@ -20,6 +20,18 @@ export class ApiError extends Error {
 
 type ApiOptions = Omit<RequestInit, "signal"> & {
   authenticated?: boolean;
+  /**
+   * Optional caller-provided AbortSignal. If the caller's signal is already
+   * aborted, the request throws immediately. Otherwise the signal is forwarded
+   * to `fetch` so callers (e.g. the AI chat hook) can cancel in-flight work.
+   * The internal timeout below still applies.
+   */
+  signal?: AbortSignal;
+  /**
+   * Request timeout in milliseconds. Defaults to 30s. Pass a larger value for
+   * slow endpoints like the AI assistant (retrieval + generation).
+   */
+  timeoutMs?: number;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -50,7 +62,13 @@ export async function apiRequest<T>(
   path: `/${string}`,
   options: ApiOptions = {},
 ): Promise<T> {
-  const { authenticated = true, ...requestOptions } = options;
+  const { authenticated = true, signal, timeoutMs = 30_000, ...requestOptions } = options;
+
+  // Honor an already-aborted caller signal without making a network request.
+  if (signal?.aborted) {
+    throw new Error("Request was cancelled.");
+  }
+
   const headers = new Headers(requestOptions.headers);
 
   headers.set("Accept", "application/json");
@@ -66,7 +84,11 @@ export async function apiRequest<T>(
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30_000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  // If the caller aborts, propagate it to our internal controller too.
+  const onCallerAbort = () => controller.abort();
+  signal?.addEventListener("abort", onCallerAbort, { once: true });
 
   try {
     const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -110,5 +132,6 @@ export async function apiRequest<T>(
     throw error;
   } finally {
     clearTimeout(timeout);
+    signal?.removeEventListener("abort", onCallerAbort);
   }
 }
