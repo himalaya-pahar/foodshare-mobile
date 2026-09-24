@@ -67,7 +67,10 @@ export function AiChatPanel({ open, onClose, chat }: AiChatPanelProps) {
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <View style={styles.root}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.root}
+      >
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Close AI Assistant"
@@ -182,19 +185,14 @@ export function AiChatPanel({ open, onClose, chat }: AiChatPanelProps) {
               ) : null}
             </ScrollView>
 
-            <KeyboardAvoidingView
-              behavior={Platform.OS === "ios" ? "padding" : undefined}
-              keyboardVerticalOffset={0}
-            >
-              <AiChatInput
-                disabled={status === "sending"}
-                onSend={(text) => void send(text)}
-                validationMessage={validationMessage}
-              />
-            </KeyboardAvoidingView>
+            <AiChatInput
+              disabled={status === "sending"}
+              onSend={(text) => void send(text)}
+              validationMessage={validationMessage}
+            />
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
