@@ -1,4 +1,4 @@
-import type { ScopeDecision } from "@/services/ai";
+import type { ChatSource, ScopeDecision } from "@/services/ai";
 
 export type ChatRole = "user" | "assistant";
 
@@ -7,6 +7,7 @@ export interface ChatMessage {
   role: ChatRole;
   text: string;
   scope?: ScopeDecision;
+  sources?: ChatSource[];
   /**
    * True when the user bubble's matching assistant reply failed (network or
    * 5xx). The bubble renders an inline "Retry" affordance.

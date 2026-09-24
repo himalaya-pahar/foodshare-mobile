@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef } from "react";
-import { Animated, Pressable, StyleSheet, View } from "react-native";
+import { Animated, Platform, Pressable, StyleSheet, View } from "react-native";
 
-import { BottomTabInset, Spacing } from "@/constants/theme";
+import { Spacing } from "@/constants/theme";
 
 import { AiColors, AiRadius } from "./ai-theme";
 
@@ -79,9 +79,10 @@ export function AiFab({ onPress }: AiFabProps) {
 
 const styles = StyleSheet.create({
   host: {
-    position: "absolute",
+    position: Platform.select({ web: "fixed", default: "absolute" }) as any,
     right: Spacing.four,
-    bottom: BottomTabInset + Spacing.four,
+    bottom: Spacing.four,
+    zIndex: 9999,
   },
   shadowWrap: {
     borderRadius: AiRadius.fab,

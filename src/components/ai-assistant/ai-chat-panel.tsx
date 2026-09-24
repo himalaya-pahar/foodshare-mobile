@@ -30,6 +30,12 @@ interface AiChatPanelProps {
   chat: UseAiChat;
 }
 
+const SUGGESTED_PROMPTS = [
+  "How do I request a pickup as an NGO?",
+  "What food donations are accepted?",
+  "How do pickup confirmations work?",
+];
+
 export function AiChatPanel({ open, onClose, chat }: AiChatPanelProps) {
   const scrollRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
@@ -117,17 +123,41 @@ export function AiChatPanel({ open, onClose, chat }: AiChatPanelProps) {
             >
               {messages.length === 0 ? (
                 <View style={styles.emptyState}>
-                  <Ionicons
-                    name="chatbubbles-outline"
-                    size={36}
-                    color={AiColors.textMuted}
-                  />
+                  <View style={styles.emptyIconWrap}>
+                    <Ionicons
+                      name="chatbubble-ellipses-outline"
+                      size={32}
+                      color={AiColors.brand}
+                    />
+                  </View>
                   <Text style={styles.emptyTitle}>
                     Ask anything about FoodShare
                   </Text>
                   <Text style={styles.emptyHint}>
-                    e.g. “How does an NGO request a pickup?”
+                    Grounded answers on donation rules, pickup workflows, and platform policies.
                   </Text>
+                  <View style={styles.promptsContainer}>
+                    <Text style={styles.promptsHeader}>Suggested questions:</Text>
+                    {SUGGESTED_PROMPTS.map((prompt) => (
+                      <Pressable
+                        key={prompt}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Ask: ${prompt}`}
+                        onPress={() => void send(prompt)}
+                        style={({ pressed }) => [
+                          styles.promptChip,
+                          pressed && styles.promptChipPressed,
+                        ]}
+                      >
+                        <Ionicons
+                          name="chatbubble-outline"
+                          size={13}
+                          color={AiColors.brand}
+                        />
+                        <Text style={styles.promptChipText}>{prompt}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
                 </View>
               ) : (
                 messages.map((m) => (
@@ -282,5 +312,49 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 13,
     color: AiColors.error,
+  },
+  emptyIconWrap: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: AiColors.brandSoft,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: AiSpacing.one,
+  },
+  promptsContainer: {
+    width: "100%",
+    marginTop: AiSpacing.four,
+    gap: AiSpacing.two,
+  },
+  promptsHeader: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: AiColors.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 2,
+    alignSelf: "flex-start",
+  },
+  promptChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: AiSpacing.two,
+    backgroundColor: AiColors.promptChipBg,
+    borderWidth: 1,
+    borderColor: AiColors.promptChipBorder,
+    borderRadius: AiRadius.input,
+    paddingHorizontal: AiSpacing.three,
+    paddingVertical: 10,
+    width: "100%",
+  },
+  promptChipPressed: {
+    backgroundColor: AiColors.brandSoft,
+  },
+  promptChipText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: AiColors.text,
+    flexShrink: 1,
   },
 });

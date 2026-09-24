@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth } from "@/providers/auth-provider";
+import { AiAssistant } from "@/components/ai-assistant";
 import { formatBangladeshDateTime } from "@/lib/datetime";
 import { getDonationMedia } from "@/services/donation-media";
 import { getAvailableDonations } from "@/services/donations";
@@ -438,6 +439,7 @@ export default function HomeScreen() {
           </Pressable>
         ) : null}
       </ScrollView>
+      <AiAssistant />
     </SafeAreaView>
   );
 }

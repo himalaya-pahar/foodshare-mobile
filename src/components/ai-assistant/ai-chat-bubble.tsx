@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { memo, useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -8,48 +9,13 @@ type AnswerBlock =
   | { kind: "bullet"; text: string }
   | { kind: "paragraph"; text: string };
 
-// Compiled once at module load — formatAnswer() may be called many times
-// per assistant bubble as the chat re-renders.
-const INLINE_BOLD_RE = /\*\*([^*]+)\*\*/g;
-const INLINE_ITALIC_RE = /(^|[^*])\*([^*]+)\*/g;
-const INLINE_CODE_RE = /`([^`]+)`/g;
 const BULLET_RE = /^(?:[-*•]|\d+\.)\s+(.+)$/;
-// Trailing sources block: the backend inlines sources at the end of the
-// `answer` field in one of two shapes:
-//
-//   Shape A (bulleted list):
-//     <prose answer>
-//
-//     Sources:
-//
-//     • Source: doc.md, section 'Foo'
-//     • Source: doc.md, section "Bar"
-//
-//   Shape B (heading + continuation):
-//     <prose answer>
-//
-//     Source:
-//     doc.md, section 'Foo'
-//
-// We strip both shapes before markdown parsing. Each source entry is
-// recognized as either a line starting with "Source:" OR a line containing
-// ", section" — the latter is the giveaway for Shape B's continuation line,
-// which has no "Source:" prefix.
-//   - Anchored at end of string
-//   - Case-insensitive on the header word
-//   - Stops at the first non-matching, non-blank line so we never eat real prose
+// Trailing sources block: the backend sometimes inlines sources at the end of the
+// `answer` field in one of two shapes. We strip it from the prose so sources
+// render cleanly via structured sources chips instead.
 const TRAILING_SOURCES_RE =
   /\n\s*[*\-•]?\s*sources?\s*:\s*(?:\r?\n)+(?:[ \t]*\r?\n)*(?:[ \t]*(?:[*\-•]?\s*source:|.*,\s*section\b).*(?:\r?\n|$))+.*$/i;
 
-function stripInlineMarkdown(input: string): string {
-  let out = input.replace(INLINE_BOLD_RE, "$1");
-  out = out.replace(INLINE_ITALIC_RE, "$1$2");
-  out = out.replace(INLINE_CODE_RE, "$1");
-  return out;
-}
-
-// Backend often appends a sources list to the assistant's `answer` field.
-// Drop it so the user only sees the prose reply.
 function stripTrailingSources(raw: string): string {
   return raw.replace(TRAILING_SOURCES_RE, "").trimEnd();
 }
@@ -64,7 +30,7 @@ function formatAnswer(raw: string): AnswerBlock[] {
     if (paragraphBuffer.length === 0) return;
     blocks.push({
       kind: "paragraph",
-      text: stripInlineMarkdown(paragraphBuffer.join(" ").trim()),
+      text: paragraphBuffer.join(" ").trim(),
     });
     paragraphBuffer = [];
   };
@@ -78,13 +44,38 @@ function formatAnswer(raw: string): AnswerBlock[] {
     const bulletMatch = BULLET_RE.exec(trimmed);
     if (bulletMatch) {
       flushParagraph();
-      blocks.push({ kind: "bullet", text: stripInlineMarkdown(bulletMatch[1]) });
+      blocks.push({ kind: "bullet", text: bulletMatch[1] });
       continue;
     }
     paragraphBuffer.push(trimmed);
   }
   flushParagraph();
   return blocks;
+}
+
+function renderFormattedText(text: string, baseStyle: object) {
+  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <Text key={index} style={[baseStyle, styles.boldText]}>
+          {part.slice(2, -2)}
+        </Text>
+      );
+    }
+    if (part.startsWith("`") && part.endsWith("`")) {
+      return (
+        <Text key={index} style={[baseStyle, styles.codeText]}>
+          {part.slice(1, -1)}
+        </Text>
+      );
+    }
+    return (
+      <Text key={index} style={baseStyle}>
+        {part}
+      </Text>
+    );
+  });
 }
 
 interface AiChatBubbleProps {
@@ -94,10 +85,10 @@ interface AiChatBubbleProps {
 
 function AiChatBubbleImpl({ message, onRetry }: AiChatBubbleProps) {
   const isUser = message.role === "user";
-  // Subtle grey tint for refusals / safe-fallbacks so the user can tell at a
-  // glance that the assistant didn't actually answer.
+  // Subtle tint for refusals / safe-fallbacks
   const isSoft =
-    !isUser && (message.scope === "out_of_domain" || message.scope === "no_evidence");
+    !isUser &&
+    (message.scope === "out_of_domain" || message.scope === "no_evidence");
   const blocks = useMemo(
     () => (isUser ? null : formatAnswer(message.text)),
     [isUser, message.text],
@@ -121,33 +112,79 @@ function AiChatBubbleImpl({ message, onRetry }: AiChatBubbleProps) {
         {isUser ? (
           <Text style={[styles.text, styles.textUser]}>{message.text}</Text>
         ) : (
-          blocks!.map((block, i) =>
-            block.kind === "bullet" ? (
-              <View key={i} style={styles.bulletRow}>
-                <Text style={[styles.text, styles.textAssistant, styles.bulletMarker]}>
-                  •
-                </Text>
+          <>
+            {blocks!.map((block, i) =>
+              block.kind === "bullet" ? (
+                <View key={i} style={styles.bulletRow}>
+                  <Text
+                    style={[
+                      styles.text,
+                      styles.textAssistant,
+                      styles.bulletMarker,
+                    ]}
+                  >
+                    •
+                  </Text>
+                  <Text
+                    style={[styles.text, styles.textAssistant, styles.bulletText]}
+                  >
+                    {renderFormattedText(block.text, [
+                      styles.text,
+                      styles.textAssistant,
+                    ])}
+                  </Text>
+                </View>
+              ) : (
                 <Text
-                  style={[styles.text, styles.textAssistant, styles.bulletText]}
+                  key={i}
+                  style={[
+                    styles.text,
+                    styles.textAssistant,
+                    styles.paragraphText,
+                  ]}
                 >
-                  {block.text}
+                  {renderFormattedText(block.text, [
+                    styles.text,
+                    styles.textAssistant,
+                  ])}
                 </Text>
+              ),
+            )}
+
+            {message.sources && message.sources.length > 0 ? (
+              <View style={styles.sourcesContainer}>
+                <View style={styles.sourcesHeader}>
+                  <Ionicons
+                    name="book-outline"
+                    size={12}
+                    color={AiColors.textMuted}
+                  />
+                  <Text style={styles.sourcesTitle}>Verified Sources</Text>
+                </View>
+                <View style={styles.sourcesList}>
+                  {message.sources.map((src, idx) => (
+                    <View key={idx} style={styles.sourceChip}>
+                      <Ionicons
+                        name="document-text-outline"
+                        size={12}
+                        color={AiColors.brand}
+                      />
+                      <Text style={styles.sourceChipText} numberOfLines={1}>
+                        {src.document}
+                        {src.section ? ` · ${src.section}` : ""}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
               </View>
-            ) : (
-              <Text
-                key={i}
-                style={[styles.text, styles.textAssistant, styles.paragraphText]}
-              >
-                {block.text}
-              </Text>
-            ),
-          )
+            ) : null}
+          </>
         )}
 
         {message.failed && onRetry ? (
           <View style={styles.retryRow}>
             <Text style={styles.retryHint}>
-              Couldn’t reach the AI.
+              AI assistant is temporarily unavailable.
             </Text>
             <Pressable
               accessibilityRole="button"
@@ -256,5 +293,53 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: AiColors.error,
     fontWeight: "600",
+  },
+  boldText: {
+    fontWeight: "700",
+    color: AiColors.text,
+  },
+  codeText: {
+    fontFamily: "monospace",
+    backgroundColor: AiColors.softBubble,
+    fontSize: 13,
+  },
+  sourcesContainer: {
+    marginTop: AiSpacing.two,
+    paddingTop: AiSpacing.two,
+    borderTopWidth: 1,
+    borderTopColor: AiColors.border,
+  },
+  sourcesHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: AiSpacing.one,
+  },
+  sourcesTitle: {
+    fontSize: 11,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    color: AiColors.textMuted,
+  },
+  sourcesList: {
+    flexDirection: "column",
+    gap: 4,
+  },
+  sourceChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: AiColors.sourceChipBg,
+    borderWidth: 1,
+    borderColor: AiColors.sourceChipBorder,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+  },
+  sourceChipText: {
+    fontSize: 11,
+    color: AiColors.text,
+    flexShrink: 1,
   },
 });

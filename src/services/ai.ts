@@ -14,6 +14,9 @@ export interface ChatSource {
   section: string;
 }
 
+/** Alias matching the Frontend Integration Guide schema */
+export type SourceItem = ChatSource;
+
 export interface ChatResponse {
   session_id: string;
   answer: string;
@@ -43,14 +46,48 @@ export function askAi({
   signal,
   timeoutMs,
 }: AskAiInput): Promise<ChatResponse> {
+  const trimmed = message.trim();
+  if (!trimmed) {
+    throw new Error("Message cannot be empty");
+  }
+  if (trimmed.length > 1000) {
+    throw new Error("Message cannot exceed 1000 characters");
+  }
+
   return apiRequest<ChatResponse>("/ai/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      message,
-      session_id: sessionId,
+      message: trimmed,
+      session_id: sessionId || null,
     }),
     signal,
     timeoutMs,
+  });
+}
+
+/**
+ * Reference helper matching the Integration Guide signature.
+ */
+export function sendChatMessage(
+  message: string,
+  sessionId: string | null,
+  options?: { signal?: AbortSignal; timeoutMs?: number },
+): Promise<ChatResponse> {
+  return askAi({
+    message,
+    sessionId,
+    signal: options?.signal,
+    timeoutMs: options?.timeoutMs,
+  });
+}
+
+/**
+ * Health check endpoint verifying backend and AI service availability.
+ */
+export function checkAiHealth(): Promise<{ status: string }> {
+  return apiRequest<{ status: string }>("/health", {
+    method: "GET",
+    authenticated: false,
   });
 }

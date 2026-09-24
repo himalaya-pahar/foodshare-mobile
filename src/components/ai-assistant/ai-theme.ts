@@ -22,6 +22,10 @@ export const AiColors = {
   softBubble: "#F2F4F2",
   errorBorder: "#F5C5BF",
   errorButtonPressed: "#FBE3DF",
+  sourceChipBg: "#F0F5F2",
+  sourceChipBorder: "#D5E3DA",
+  promptChipBg: "#F3F7F4",
+  promptChipBorder: "#DEE7E1",
 } as const;
 
 export const AiSpacing = Spacing;

@@ -130,6 +130,7 @@ export function useAiChat(options: UseAiChatOptions = {}) {
           role: "assistant",
           text: response.answer,
           scope: response.scope_decision,
+          sources: response.sources,
         });
         setSessionId(response.session_id);
         setStatus("idle");
@@ -151,6 +152,15 @@ export function useAiChat(options: UseAiChatOptions = {}) {
             return { ok: false };
           }
 
+          if (err.status === 403) {
+            setStatus("idle");
+            const friendly =
+              "Your account is awaiting administrator approval.";
+            setError(friendly);
+            markUserBubbleFailed(userMessage.id, friendly);
+            return { ok: false, validationMessage: friendly };
+          }
+
           if (err.status === 422) {
             setStatus("idle");
             setError(err.message);
@@ -158,12 +168,23 @@ export function useAiChat(options: UseAiChatOptions = {}) {
             return { ok: false, validationMessage: err.message };
           }
 
-          markUserBubbleFailed(userMessage.id, err.message);
+          const friendly =
+            err.status >= 500
+              ? "AI assistant is temporarily unavailable. Please try again."
+              : err.message;
+          markUserBubbleFailed(userMessage.id, friendly);
           return { ok: false };
         }
 
         const message =
-          err instanceof Error ? err.message : "Something went wrong.";
+          err instanceof Error &&
+          (err.message.includes("timed out") ||
+            err.message.includes("Network") ||
+            err.message.includes("Failed to fetch"))
+            ? "AI assistant is temporarily unavailable. Please try again."
+            : err instanceof Error
+              ? err.message
+              : "AI assistant is temporarily unavailable. Please try again.";
         markUserBubbleFailed(userMessage.id, message);
         return { ok: false };
       }
