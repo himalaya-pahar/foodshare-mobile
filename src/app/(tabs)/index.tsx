@@ -166,7 +166,7 @@ function DonationCard({
           <Text style={styles.postedAt}>Posted {formatBangladeshDateTime(donation.created_at)}</Text>
           <View style={styles.cardActionBtn}>
             <Text style={styles.cardActionText}>Details</Text>
-            <Ionicons name="arrow-forward" size={12} color="#FFFFFF" />
+            <Ionicons name="arrow-forward" size={12} color="#16673E" />
           </View>
         </View>
       </View>
@@ -534,17 +534,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: 15,
     paddingHorizontal: 18,
-    backgroundColor: "#16673E",
-    borderWidth: 1,
-    borderColor: "#1E8250",
-    shadowColor: "#0D3B22",
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 3,
+    backgroundColor: "transparent",
+    borderWidth: 1.5,
+    borderColor: "#16673E",
   },
   searchButtonText: {
-    color: "#FFFFFF",
+    color: "#16673E",
     fontSize: 14,
     fontWeight: "800",
   },
@@ -778,13 +773,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
-    backgroundColor: "#16673E",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "#16673E",
+    backgroundColor: "transparent",
   },
   cardActionText: {
-    color: "#FFFFFF",
+    color: "#16673E",
     fontSize: 12,
     fontWeight: "800",
   },

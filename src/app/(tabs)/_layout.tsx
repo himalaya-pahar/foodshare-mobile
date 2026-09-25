@@ -14,14 +14,14 @@ export default function TabsLayout() {
   return (
     <NativeTabs
       backgroundColor="#FFFFFF"
-      indicatorColor="#DDF3E4"
+      disableIndicator
       iconColor={{
-        default: "#7A887F",
-        selected: "#176B43",
+        default: "#8A9690",
+        selected: "#16673E",
       }}
       labelStyle={{
-        default: { color: "#7A887F" },
-        selected: { color: "#176B43" },
+        default: { color: "#8A9690" },
+        selected: { color: "#16673E", fontWeight: "700" },
       }}
       disableTransparentOnScrollEdge
     >

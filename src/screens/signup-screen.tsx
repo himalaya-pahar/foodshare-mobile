@@ -276,7 +276,7 @@ export default function SignupScreen({ onBack }: SignupScreenProps) {
             {verificationSentEmail ? (
               <View style={styles.verificationCard}>
                 <View style={styles.verifyIconWrapper}>
-                  <Ionicons name="mail-outline" size={30} color="#16673E" />
+                  <Ionicons name="mail-outline" size={40} color="#16673E" />
                 </View>
 
                 <Text style={styles.title}>Verify Your Email</Text>
@@ -788,10 +788,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   verifyIconWrapper: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    backgroundColor: "#E4F7EC",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,

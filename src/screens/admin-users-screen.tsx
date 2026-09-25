@@ -500,18 +500,30 @@ export default function AdminUsersScreen() {
         setError(null);
 
         try {
-          const result =
-            mode === "pending"
-              ? await getPendingUsers({
-                  limit: PAGE_SIZE,
-                  offset,
-                  q: query || undefined,
-                })
-              : await getAdminUsers({
-                  limit: PAGE_SIZE,
-                  offset,
-                  q: query || undefined,
-                });
+          let result: PaginatedResponse<AdminUser>;
+
+          if (mode === "pending") {
+            result = await getPendingUsers({
+              limit: PAGE_SIZE,
+              offset,
+              q: query || undefined,
+            });
+          } else {
+            const raw = await getAdminUsers({
+              limit: PAGE_SIZE,
+              offset,
+              q: query || undefined,
+            });
+
+            // Filter out pending users from the "all" tab — they belong in the "pending" tab
+            const nonPending = raw.items.filter((u) => {
+              if (u.status === "pending_email" || u.status === "pending_admin") return false;
+              if (!u.status && u.approval_status === "PENDING") return false;
+              return true;
+            });
+
+            result = { ...raw, items: nonPending, total: raw.total - (raw.items.length - nonPending.length) };
+          }
 
           if (!active) return;
 
@@ -573,6 +585,7 @@ export default function AdminUsersScreen() {
       } else {
         await rejectAdminUser(targetUser.id);
       }
+      setSelectedUser(null);
       setReloadKey((value) => value + 1);
     } catch (requestError) {
       Alert.alert(
@@ -593,6 +606,7 @@ export default function AdminUsersScreen() {
 
     try {
       await deleteAdminUser(targetUser.id);
+      setSelectedUser(null);
       setReloadKey((value) => value + 1);
     } catch (requestError) {
       Alert.alert(
