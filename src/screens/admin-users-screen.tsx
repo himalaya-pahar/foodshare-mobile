@@ -503,11 +503,45 @@ export default function AdminUsersScreen() {
           let result: PaginatedResponse<AdminUser>;
 
           if (mode === "pending") {
-            result = await getPendingUsers({
+            const pendingResult = await getPendingUsers({
               limit: PAGE_SIZE,
               offset,
               q: query || undefined,
             });
+
+            // Ensure unverified email accounts appear in pending tab even if backend response is transitioning
+            let combined = [...pendingResult.items];
+            let additionalCount = 0;
+
+            try {
+              const allUsersRes = await getAdminUsers({
+                limit: 100,
+                offset: 0,
+                q: query || undefined,
+              });
+              const unverifiedUsers = allUsersRes.items.filter(
+                (u) =>
+                  u.role !== "ADMIN" &&
+                  (u.status === "pending_email" ||
+                    (!u.email_verified &&
+                      u.status !== "active" &&
+                      u.status !== "rejected")) &&
+                  !combined.some((p) => p.id === u.id),
+              );
+              if (unverifiedUsers.length > 0) {
+                combined = [...combined, ...unverifiedUsers];
+                additionalCount = unverifiedUsers.length;
+              }
+            } catch {
+              // Ignore fallback error and use pendingResult
+            }
+
+            result = {
+              items: combined.slice(offset, offset + PAGE_SIZE),
+              total: pendingResult.total + additionalCount,
+              limit: PAGE_SIZE,
+              offset,
+            };
           } else {
             const raw = await getAdminUsers({
               limit: PAGE_SIZE,
@@ -519,10 +553,15 @@ export default function AdminUsersScreen() {
             const nonPending = raw.items.filter((u) => {
               if (u.status === "pending_email" || u.status === "pending_admin") return false;
               if (!u.status && u.approval_status === "PENDING") return false;
+              if (!u.email_verified && u.status !== "active" && u.status !== "rejected") return false;
               return true;
             });
 
-            result = { ...raw, items: nonPending, total: raw.total - (raw.items.length - nonPending.length) };
+            result = {
+              ...raw,
+              items: nonPending,
+              total: Math.max(0, raw.total - (raw.items.length - nonPending.length)),
+            };
           }
 
           if (!active) return;

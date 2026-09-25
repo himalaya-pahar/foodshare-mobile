@@ -18,7 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import BrandHeader from "@/components/brand-header";
 import { useAuth } from "@/providers/auth-provider";
-import { formatBangladeshDateTime } from "@/lib/datetime";
+import { asDate, formatBangladeshDateTime } from "@/lib/datetime";
 import { getDonationMedia } from "@/services/donation-media";
 import {
   createPickupRequest,
@@ -28,8 +28,7 @@ import type { DonationFeedItem } from "@/types/donation";
 import type { DonationMedia } from "@/types/donation-media";
 
 function safeDate(value: string): Date {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? new Date() : date;
+  return asDate(value) ?? new Date();
 }
 
 function mergeDate(current: Date, next: Date): Date {

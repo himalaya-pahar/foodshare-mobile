@@ -21,7 +21,7 @@ import { Ionicons } from "@expo/vector-icons";
 import BrandHeader from "@/components/brand-header";
 import DonationMediaModal from "@/components/donation-media-modal";
 import PaginationControls from "@/components/pagination-controls";
-import { formatBangladeshDateTime } from "@/lib/datetime";
+import { asDate, formatBangladeshDateTime } from "@/lib/datetime";
 import { useAuth } from "@/providers/auth-provider";
 import {
   acceptPickupRequest,
@@ -85,8 +85,7 @@ type DonationForm = {
 };
 
 function safeDate(value: string): Date {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? new Date() : date;
+  return asDate(value) ?? new Date();
 }
 
 function emptyForm(area?: string | null, address?: string | null): DonationForm {

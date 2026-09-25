@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ApiError } from "@/lib/api";
 import {
+  asDate,
   formatBangladeshDateTime,
   formatBangladeshTimelineTime,
 } from "@/lib/datetime";
@@ -723,8 +724,8 @@ export default function StatusHistoryScreen() {
             }
 
             flows.sort((first, second) => {
-              const firstTime = first.posted_at ? new Date(first.posted_at).getTime() : 0;
-              const secondTime = second.posted_at ? new Date(second.posted_at).getTime() : 0;
+              const firstTime = asDate(first.posted_at)?.getTime() ?? 0;
+              const secondTime = asDate(second.posted_at)?.getTime() ?? 0;
               return secondTime - firstTime;
             });
 
