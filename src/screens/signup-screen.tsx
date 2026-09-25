@@ -249,17 +249,21 @@ export default function SignupScreen({ onBack }: SignupScreenProps) {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.form}>
-            <View style={styles.heroBanner}>
-              <View style={styles.logoRow}>
-                <View style={styles.logoMark}>
-                  <Text style={styles.logoLetter}>F</Text>
-                </View>
-                <Text style={styles.brandName}>FoodShare</Text>
-              </View>
-              <Text style={styles.heroTagline}>
-                Join our community to reduce{"\n"}food waste and feed those in need.
-              </Text>
+            <View style={styles.brandRow}>
+              <Text style={styles.brand}>FoodShare</Text>
             </View>
+
+            {!verificationSentEmail && !success ? (
+              <View style={styles.header}>
+                <View style={styles.headerBadge}>
+                  <Text style={styles.headerBadgeText}>Join Network</Text>
+                </View>
+                <Text style={styles.headerTitle}>Create an account</Text>
+                <Text style={styles.headerText}>
+                  Join as a restaurant or NGO to help share surplus food.
+                </Text>
+              </View>
+            ) : null}
 
             {verificationSentEmail ? (
               <View style={styles.verificationCard}>
@@ -377,11 +381,6 @@ export default function SignupScreen({ onBack }: SignupScreenProps) {
               </View>
             ) : (
               <>
-                <Text style={styles.title}>Create an account</Text>
-                <Text style={styles.message}>
-                  Join as a restaurant or NGO to help share surplus food.
-                </Text>
-
                 <Text style={styles.label}>Account type</Text>
 
                 <View
@@ -565,41 +564,45 @@ const styles = StyleSheet.create({
     maxWidth: 440,
     alignSelf: "center",
   },
-  heroBanner: {
-    gap: 14,
-    borderRadius: 24,
-    padding: 24,
-    marginBottom: 32,
-    backgroundColor: "#174B36",
+  brandRow: {
+    marginBottom: 16,
   },
-  logoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  logoMark: {
-    width: 38,
-    height: 38,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.18)",
-  },
-  logoLetter: {
-    color: "#FFFFFF",
-    fontSize: 20,
+  brand: {
+    fontSize: 22,
     fontWeight: "800",
+    color: "#183B2A",
+    letterSpacing: -0.4,
   },
-  brandName: {
-    fontSize: 24,
+  header: {
+    marginBottom: 24,
+    gap: 8,
+  },
+  headerBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#E4F2E8",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#C6E4D1",
+  },
+  headerBadgeText: {
+    color: "#176B43",
+    fontSize: 11,
     fontWeight: "800",
-    color: "#FFFFFF",
-    letterSpacing: -0.5,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
   },
-  heroTagline: {
-    color: "#C5E5D0",
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#17251B",
+    letterSpacing: -0.7,
+  },
+  headerText: {
     fontSize: 15,
     lineHeight: 22,
+    color: "#526057",
   },
   title: {
     fontSize: 28,

@@ -17,6 +17,7 @@ import {
   formatBangladeshTimelineTime,
 } from "@/lib/datetime";
 import { useAuth } from "@/providers/auth-provider";
+import PaginationControls from "@/components/pagination-controls";
 import { getRestaurantDonations } from "@/services/donations";
 import {
   getDonationFlows,
@@ -305,7 +306,16 @@ export default function StatusHistoryScreen() {
           const nextPage = mode === "donations"
             ? await getDonationFlows({ limit: PAGE_SIZE, offset })
             : await getPickupFlows({ limit: PAGE_SIZE, offset });
-          if (active) setPage(nextPage);
+          if (!active) return;
+          const maxSafeOffset = Math.max(
+            0,
+            Math.floor((nextPage.total - 1) / PAGE_SIZE) * PAGE_SIZE,
+          );
+          if (offset > maxSafeOffset && nextPage.total > 0) {
+            setOffset(maxSafeOffset);
+            return;
+          }
+          setPage(nextPage);
         } catch (requestError) {
           // The deployed API has legacy event logs. Use them until the two flow
           // endpoints described below are added, then automatically use the richer data.
@@ -377,14 +387,17 @@ export default function StatusHistoryScreen() {
     <SafeAreaView style={styles.screen} edges={Platform.OS === "android" ? ["top", "left", "right"] : []}>
       <ScrollView contentContainerStyle={styles.container} contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false}>
         <View style={styles.brandRow}>
-          <View style={styles.logo}><Text style={styles.logoText}>F</Text></View>
           <Text style={styles.brand}>FoodShare</Text>
         </View>
 
-        <View style={styles.hero}>
-          <Text style={styles.heroLabel}>ACTIVITY HISTORY</Text>
-          <Text style={styles.heroTitle}>From food to community.</Text>
-          <Text style={styles.heroText}>Each card follows one handover journey and the organizations involved.</Text>
+        <View style={styles.header}>
+          <View style={styles.headerBadge}>
+            <Text style={styles.headerBadgeText}>Activity History</Text>
+          </View>
+          <Text style={styles.headerTitle}>From food to community</Text>
+          <Text style={styles.headerText}>
+            Each card follows one handover journey and the organizations involved.
+          </Text>
         </View>
 
         {isAdmin ? (
@@ -413,13 +426,13 @@ export default function StatusHistoryScreen() {
         {!loading && !error && flows.length === 0 ? <View style={styles.emptyBox}><Text style={styles.emptyTitle}>No history yet</Text><Text style={styles.emptyText}>Food journeys will appear here as donations and pickups progress.</Text></View> : null}
         {!loading && !error ? flows.map((flow) => <FlowCard key={`${flow.donation_id}-${flow.pickup_request_id ?? "donation"}`} flow={flow} mode={mode} showOrganizationIds={isAdmin} />) : null}
 
-        {total > PAGE_SIZE ? (
-          <View style={styles.paginationRow}>
-            <Pressable disabled={!canGoBack} onPress={() => setOffset((value) => Math.max(0, value - PAGE_SIZE))} style={[styles.pageButton, !canGoBack && styles.disabled]}><Text style={styles.pageText}>Previous</Text></Pressable>
-            <Text style={styles.pageNumber}>{Math.floor(offset / PAGE_SIZE) + 1} / {Math.ceil(total / PAGE_SIZE)}</Text>
-            <Pressable disabled={!canGoForward} onPress={() => setOffset((value) => value + PAGE_SIZE)} style={[styles.pageButton, !canGoForward && styles.disabled]}><Text style={styles.pageText}>Next</Text></Pressable>
-          </View>
-        ) : null}
+        <PaginationControls
+          offset={offset}
+          limit={PAGE_SIZE}
+          total={total}
+          loading={loading}
+          onPageChange={setOffset}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -429,13 +442,40 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#F4F7F3" },
   container: { width: "100%", maxWidth: 640, alignSelf: "center", paddingHorizontal: 22, paddingBottom: 36, gap: 18 },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  logo: { width: 36, height: 36, alignItems: "center", justifyContent: "center", borderRadius: 12, backgroundColor: "#176B43" },
-  logoText: { color: "#FFFFFF", fontSize: 19, fontWeight: "800" },
+
   brand: { color: "#183B2A", fontSize: 21, fontWeight: "800", letterSpacing: -0.4 },
-  hero: { gap: 10, borderRadius: 26, padding: 24, backgroundColor: "#174B36", shadowColor: "#0A2E1C", shadowOpacity: 0.25, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
-  heroLabel: { color: "#B9DFC7", fontSize: 11, fontWeight: "800", letterSpacing: 1.2 },
-  heroTitle: { color: "#FFFFFF", fontSize: 30, fontWeight: "800", letterSpacing: -0.8 },
-  heroText: { color: "#C5E5D0", fontSize: 15, lineHeight: 23 },
+  header: {
+    paddingTop: 8,
+    paddingBottom: 4,
+    gap: 8,
+  },
+  headerBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#E4F2E8",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#C6E4D1",
+  },
+  headerBadgeText: {
+    color: "#176B43",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+  },
+  headerTitle: {
+    color: "#17251B",
+    fontSize: 28,
+    fontWeight: "800",
+    letterSpacing: -0.7,
+  },
+  headerText: {
+    color: "#526057",
+    fontSize: 15,
+    lineHeight: 22,
+  },
   segmentedControl: { flexDirection: "row", padding: 5, borderRadius: 16, backgroundColor: "#E1EDE4" },
   segment: { flex: 1, alignItems: "center", borderRadius: 12, paddingVertical: 12 },
   segmentActive: { backgroundColor: "#FFFFFF", shadowColor: "#173526", shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
@@ -446,28 +486,28 @@ const styles = StyleSheet.create({
   sectionTitle: { marginTop: 4, color: "#173526", fontSize: 24, fontWeight: "800", letterSpacing: -0.4 },
   refreshButton: { borderRadius: 13, paddingHorizontal: 14, paddingVertical: 11, backgroundColor: "#E1F0E5" },
   refreshText: { color: "#176B43", fontSize: 14, fontWeight: "800" },
-  stateBox: { minHeight: 165, alignItems: "center", justifyContent: "center", gap: 14, borderRadius: 24, backgroundColor: "#FFFFFF", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
+  stateBox: { minHeight: 165, alignItems: "center", justifyContent: "center", gap: 14, borderRadius: 20, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#E5EBE7", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
   stateText: { color: "#66786D", fontSize: 14 },
   errorBox: { gap: 10, borderRadius: 20, padding: 18, backgroundColor: "#F2F5F3", borderWidth: 1, borderColor: "#D5E0D8" },
   errorText: { color: "#27362D", fontSize: 14, lineHeight: 20 },
   retryText: { color: "#176B43", fontSize: 14, fontWeight: "800" },
-  emptyBox: { alignItems: "center", borderRadius: 24, paddingHorizontal: 32, paddingVertical: 40, backgroundColor: "#FFFFFF", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
+  emptyBox: { alignItems: "center", borderRadius: 20, paddingHorizontal: 32, paddingVertical: 40, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#E5EBE7", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
   emptyTitle: { color: "#173526", fontSize: 19, fontWeight: "800" },
   emptyText: { marginTop: 8, color: "#66786D", fontSize: 14, lineHeight: 22, textAlign: "center" },
-  flowCard: { gap: 18, borderRadius: 24, padding: 20, backgroundColor: "#FFFFFF", shadowColor: "#173526", shadowOpacity: 0.05, shadowRadius: 14, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
+  flowCard: { gap: 16, borderRadius: 20, padding: 18, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#E5EBE7", shadowColor: "#173526", shadowOpacity: 0.05, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
   flowHeader: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 12 },
   flowHeaderCopy: { flex: 1, gap: 6 },
-  foodName: { color: "#173526", fontSize: 20, fontWeight: "800", lineHeight: 26, letterSpacing: -0.3 },
+  foodName: { color: "#173526", fontSize: 19, fontWeight: "800", lineHeight: 25, letterSpacing: -0.3 },
   postedAt: { color: "#6E8275", fontSize: 13, lineHeight: 19 },
-  statusBadge: { borderRadius: 999, paddingHorizontal: 11, paddingVertical: 7, backgroundColor: "#E2F4E8" },
-  statusBadgeText: { color: "#176B43", fontSize: 12, fontWeight: "800" },
-  statusBadgeTerminal: { backgroundColor: "#ECEFF1" },
+  statusBadge: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: "#E2F4E8", borderWidth: 1, borderColor: "#BDE6CE" },
+  statusBadgeText: { color: "#176B43", fontSize: 11, fontWeight: "800" },
+  statusBadgeTerminal: { backgroundColor: "#ECEFF1", borderColor: "#CFD8DC" },
   statusBadgeTextTerminal: { color: "#546E7A" },
-  organizationBox: { flexDirection: "row", borderRadius: 16, padding: 14, backgroundColor: "#F1F6F2" },
-  organizationColumn: { flex: 1, gap: 5 },
+  organizationBox: { flexDirection: "row", borderRadius: 14, padding: 12, backgroundColor: "#F1F6F2" },
+  organizationColumn: { flex: 1, gap: 4 },
   organizationDivider: { width: 1, marginHorizontal: 12, backgroundColor: "#D8E6DB" },
   organizationLabel: { color: "#6E8275", fontSize: 10, fontWeight: "800", letterSpacing: 0.7 },
-  organizationName: { color: "#284937", fontSize: 14, fontWeight: "700", lineHeight: 20 },
+  organizationName: { color: "#284937", fontSize: 13, fontWeight: "700", lineHeight: 19 },
   organizationId: { color: "#6E8275", fontSize: 11, fontWeight: "700" },
   timeline: { flexDirection: "row", alignItems: "flex-start" },
   timelineStep: { flex: 1, alignItems: "center", minWidth: 0 },
@@ -481,9 +521,4 @@ const styles = StyleSheet.create({
   stepLabel: { marginTop: 8, color: "#8A9A8E", fontSize: 11, fontWeight: "800", textAlign: "center" },
   stepLabelReached: { color: "#176B43" },
   stepTime: { marginTop: 4, color: "#7A8C80", fontSize: 10, lineHeight: 14, textAlign: "center" },
-  paginationRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  pageButton: { flex: 1, alignItems: "center", borderRadius: 14, paddingVertical: 14, backgroundColor: "#E1F0E5" },
-  pageText: { color: "#176B43", fontSize: 15, fontWeight: "800" },
-  pageNumber: { minWidth: 68, color: "#607568", fontSize: 13, fontWeight: "700", textAlign: "center" },
-  disabled: { opacity: 0.45 },
 });

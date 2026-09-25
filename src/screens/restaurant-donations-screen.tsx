@@ -18,6 +18,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import DonationMediaModal from "@/components/donation-media-modal";
+import PaginationControls from "@/components/pagination-controls";
 import { formatBangladeshDateTime } from "@/lib/datetime";
 import { useAuth } from "@/providers/auth-provider";
 import {
@@ -443,6 +444,10 @@ function PickupRequestsModal({
   const [error, setError] = useState<string | null>(null);
   const [busyRequestId, setBusyRequestId] = useState<number | null>(null);
 
+  useEffect(() => {
+    setOffset(0);
+  }, [donation.id]);
+
   const loadRequests = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -452,6 +457,14 @@ function PickupRequestsModal({
         limit: PAGE_SIZE,
         offset,
       });
+      const maxSafeOffset = Math.max(
+        0,
+        Math.floor((result.total - 1) / PAGE_SIZE) * PAGE_SIZE,
+      );
+      if (offset > maxSafeOffset && result.total > 0) {
+        setOffset(maxSafeOffset);
+        return;
+      }
       setPage(result);
     } catch (requestError) {
       setError(
@@ -623,24 +636,13 @@ function PickupRequestsModal({
               );
             })}
 
-            {total > PAGE_SIZE ? (
-              <View style={styles.paginationRow}>
-                <Pressable
-                  disabled={!canGoBack}
-                  onPress={() => setOffset((current) => Math.max(0, current - PAGE_SIZE))}
-                  style={[styles.pageButton, !canGoBack && styles.disabledButton]}
-                >
-                  <Text style={styles.pageButtonText}>Previous</Text>
-                </Pressable>
-                <Pressable
-                  disabled={!canGoForward}
-                  onPress={() => setOffset((current) => current + PAGE_SIZE)}
-                  style={[styles.pageButton, !canGoForward && styles.disabledButton]}
-                >
-                  <Text style={styles.pageButtonText}>Next</Text>
-                </Pressable>
-              </View>
-            ) : null}
+            <PaginationControls
+              offset={offset}
+              limit={PAGE_SIZE}
+              total={total}
+              loading={loading}
+              onPageChange={setOffset}
+            />
           </ScrollView>
         </View>
       </SafeAreaView>
@@ -811,6 +813,14 @@ export default function RestaurantDonationsScreen() {
         try {
           const result = await getRestaurantDonations({ limit: PAGE_SIZE, offset });
           if (!active) return;
+          const maxSafeOffset = Math.max(
+            0,
+            Math.floor((result.total - 1) / PAGE_SIZE) * PAGE_SIZE,
+          );
+          if (offset > maxSafeOffset && result.total > 0) {
+            setOffset(maxSafeOffset);
+            return;
+          }
           const itemsWithMedia = await addMediaToDonations(result.items);
           if (active) setPage({ ...result, items: itemsWithMedia });
         } catch (requestError) {
@@ -908,14 +918,17 @@ export default function RestaurantDonationsScreen() {
     <SafeAreaView style={styles.screen} edges={Platform.OS === "android" ? ["top", "left", "right"] : []}>
       <ScrollView contentContainerStyle={styles.container} contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false}>
         <View style={styles.brandRow}>
-          <View style={styles.logo}><Text style={styles.logoText}>F</Text></View>
           <Text style={styles.brand}>FoodShare</Text>
         </View>
 
-        <View style={styles.hero}>
-          <Text style={styles.heroLabel}>RESTAURANT WORKSPACE</Text>
-          <Text style={styles.heroTitle}>Share food with purpose.</Text>
-          <Text style={styles.heroText}>Post safe surplus food, choose a pickup request, and follow every collection.</Text>
+        <View style={styles.header}>
+          <View style={styles.headerBadge}>
+            <Text style={styles.headerBadgeText}>Restaurant Workspace</Text>
+          </View>
+          <Text style={styles.headerTitle}>Share food with purpose</Text>
+          <Text style={styles.headerText}>
+            Post safe surplus food, choose a pickup request, and follow every collection.
+          </Text>
         </View>
 
         <View style={styles.listHeader}>
@@ -947,10 +960,13 @@ export default function RestaurantDonationsScreen() {
           />
         )) : null}
 
-        {total > PAGE_SIZE ? <View style={styles.paginationRow}>
-          <Pressable disabled={!canGoBack} onPress={() => setOffset((current) => Math.max(0, current - PAGE_SIZE))} style={[styles.pageButton, !canGoBack && styles.disabledButton]}><Text style={styles.pageButtonText}>Previous</Text></Pressable>
-          <Pressable disabled={!canGoForward} onPress={() => setOffset((current) => current + PAGE_SIZE)} style={[styles.pageButton, !canGoForward && styles.disabledButton]}><Text style={styles.pageButtonText}>Next</Text></Pressable>
-        </View> : null}
+        <PaginationControls
+          offset={offset}
+          limit={PAGE_SIZE}
+          total={total}
+          loading={loading}
+          onPageChange={setOffset}
+        />
       </ScrollView>
 
       {formDonation !== undefined && canManage ? <DonationFormModal key={formDonation?.id ?? "new"} donation={formDonation} area={user?.area} address={user?.address} onClose={() => setFormDonation(undefined)} onSave={saveDonation} /> : null}
@@ -964,50 +980,77 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#F4F7F3" },
   container: { width: "100%", maxWidth: 640, alignSelf: "center", paddingHorizontal: 22, paddingBottom: 36, gap: 18 },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  logo: { width: 36, height: 36, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: "#176B43" },
-  logoText: { color: "#FFFFFF", fontSize: 19, fontWeight: "800" },
+
   brand: { color: "#183B2A", fontSize: 21, fontWeight: "800", letterSpacing: -0.4 },
-  hero: { gap: 10, borderRadius: 26, padding: 24, backgroundColor: "#174B36", shadowColor: "#0A2E1C", shadowOpacity: 0.25, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
-  heroLabel: { color: "#B9DFC7", fontSize: 11, fontWeight: "800", letterSpacing: 1.2 },
-  heroTitle: { color: "#FFFFFF", fontSize: 30, fontWeight: "800", letterSpacing: -0.8 },
-  heroText: { color: "#C5E5D0", fontSize: 15, lineHeight: 23 },
+  header: {
+    paddingTop: 8,
+    paddingBottom: 4,
+    gap: 8,
+  },
+  headerBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#E4F2E8",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#C6E4D1",
+  },
+  headerBadgeText: {
+    color: "#176B43",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+  },
+  headerTitle: {
+    color: "#17251B",
+    fontSize: 28,
+    fontWeight: "800",
+    letterSpacing: -0.7,
+  },
+  headerText: {
+    color: "#526057",
+    fontSize: 15,
+    lineHeight: 22,
+  },
   listHeader: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 8 },
   sectionLabel: { color: "#6A8374", fontSize: 11, fontWeight: "800", letterSpacing: 1.1 },
   sectionTitle: { marginTop: 4, color: "#173526", fontSize: 24, fontWeight: "800", letterSpacing: -0.4 },
   addButton: { borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: "#176B43", shadowColor: "#0D3B22", shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
   addButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
-  donationCard: { overflow: "hidden", borderWidth: 1, borderColor: "#E5EEE7", borderRadius: 24, backgroundColor: "#FFFFFF", shadowColor: "#173526", shadowOpacity: 0.05, shadowRadius: 14, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
-  cardContent: { padding: 20, gap: 16 },
+  donationCard: { overflow: "hidden", borderWidth: 1, borderColor: "#E5EEE7", borderRadius: 20, backgroundColor: "#FFFFFF", shadowColor: "#173526", shadowOpacity: 0.05, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
+  cardContent: { padding: 18, gap: 14 },
   mediaContainer: { backgroundColor: "#E4EEE6" },
   heroMediaImage: { width: 340, height: 220, backgroundColor: "#E4EEE6" },
   heroMediaVideo: { width: 340, height: 220, backgroundColor: "#1C4834" },
   cardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
-  statusBadge: { borderRadius: 999, paddingHorizontal: 11, paddingVertical: 7, backgroundColor: "#E4F2E8" },
-  statusAVAILABLE: { backgroundColor: "#E2F4E8" },
-  statusRESERVED: { backgroundColor: "#FFF0D4" },
-  statusCOLLECTED: { backgroundColor: "#E1EEFF" },
-  statusCOMPLETED: { backgroundColor: "#DFF1E5" },
-  statusEXPIRED: { backgroundColor: "#F0F0F0" },
-  statusCANCELLED: { backgroundColor: "#FFE8E5" },
+  statusBadge: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: "#E4F2E8", borderWidth: 1, borderColor: "#D1E3D7" },
+  statusAVAILABLE: { backgroundColor: "#E2F4E8", borderColor: "#BDE6CE" },
+  statusRESERVED: { backgroundColor: "#FFF0D4", borderColor: "#F7D8A7" },
+  statusCOLLECTED: { backgroundColor: "#E1EEFF", borderColor: "#C7DCF9" },
+  statusCOMPLETED: { backgroundColor: "#DFF1E5", borderColor: "#BFE4CD" },
+  statusEXPIRED: { backgroundColor: "#F0F0F0", borderColor: "#D5D5D5" },
+  statusCANCELLED: { backgroundColor: "#FFE8E5", borderColor: "#F9C3BC" },
   statusText: { color: "#24593B", fontSize: 12, fontWeight: "800" },
   areaText: { color: "#66786D", fontSize: 13, fontWeight: "700" },
-  foodName: { color: "#173526", fontSize: 22, fontWeight: "800", letterSpacing: -0.4 },
+  foodName: { color: "#173526", fontSize: 20, fontWeight: "800", letterSpacing: -0.4 },
   donationIdentity: { gap: 5 },
   donationIdTop: { color: "#6E8275", fontSize: 11, fontWeight: "700", letterSpacing: 0.3 },
   quantityText: { color: "#496957", fontSize: 15, fontWeight: "700" },
-  detailsPanel: { borderRadius: 16, padding: 14, backgroundColor: "#F3F7F4" },
+  detailsPanel: { borderRadius: 14, padding: 12, backgroundColor: "#F3F7F4" },
   metaRow: { flexDirection: "row", alignItems: "stretch" },
   metaItem: { flex: 1, gap: 4 },
   metaDivider: { width: 1, marginHorizontal: 12, backgroundColor: "#DCE7DE" },
   metaLabel: { color: "#7A8C80", fontSize: 10, fontWeight: "800", letterSpacing: 0.7 },
   metaValue: { color: "#284634", fontSize: 13, fontWeight: "700" },
-  cardActions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 2 },
-  secondaryButton: { borderRadius: 12, paddingHorizontal: 13, paddingVertical: 10, backgroundColor: "#EDF7F0" },
-  secondaryButtonText: { color: "#176B43", fontSize: 14, fontWeight: "800" },
-  cancelButton: { borderRadius: 12, paddingHorizontal: 13, paddingVertical: 10, backgroundColor: "#ECEFF1" },
-  cancelText: { color: "#455A64", fontSize: 14, fontWeight: "800" },
-  completeButton: { borderRadius: 12, paddingHorizontal: 13, paddingVertical: 10, backgroundColor: "#176B43" },
-  completeText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
+  cardActions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 },
+  secondaryButton: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: "#FFFFFF", borderWidth: 1.5, borderColor: "#D5E0D8" },
+  secondaryButtonText: { color: "#176B43", fontSize: 13, fontWeight: "800" },
+  cancelButton: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: "#FDF2F2", borderWidth: 1, borderColor: "#F8B4B4" },
+  cancelText: { color: "#9B1C1C", fontSize: 13, fontWeight: "800" },
+  completeButton: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: "#176B43", shadowColor: "#0D3B22", shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  completeText: { color: "#FFFFFF", fontSize: 13, fontWeight: "800" },
   loadingBox: { minHeight: 160, alignItems: "center", justifyContent: "center", gap: 14, borderRadius: 24, backgroundColor: "#FFFFFF", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
   loadingText: { color: "#66786D", fontSize: 14 },
   errorBox: { gap: 10, borderRadius: 20, padding: 18, backgroundColor: "#F2F5F3", borderWidth: 1, borderColor: "#D5E0D8" },

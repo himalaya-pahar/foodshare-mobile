@@ -155,21 +155,19 @@ export default function DashboardScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.brandRow}>
-          <View style={styles.logo}>
-            <Text style={styles.logoText}>F</Text>
-          </View>
-
           <Text style={styles.brand}>FoodShare</Text>
         </View>
 
-        <View style={styles.hero}>
-          <Text style={styles.heroLabel}>
-            {dashboard?.roleLabel ?? "YOUR WORKSPACE"}
-          </Text>
+        <View style={styles.header}>
+          <View style={styles.headerBadge}>
+            <Text style={styles.headerBadgeText}>
+              {dashboard?.roleLabel ?? "WORKSPACE"}
+            </Text>
+          </View>
 
-          <Text style={styles.heroGreeting}>Hello, {firstName}.</Text>
+          <Text style={styles.headerTitle}>Hello, {firstName}</Text>
 
-          <Text style={styles.heroText}>
+          <Text style={styles.headerText}>
             {dashboard?.description ?? "Loading your FoodShare activity."}
           </Text>
         </View>
@@ -272,52 +270,44 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
-  logo: {
-    width: 36,
-    height: 36,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 12,
-    backgroundColor: "#176B43",
-  },
-  logoText: {
-    color: "#FFFFFF",
-    fontSize: 19,
-    fontWeight: "800",
-  },
+
   brand: {
     color: "#183B2A",
     fontSize: 21,
     fontWeight: "800",
     letterSpacing: -0.4,
   },
-  hero: {
-    gap: 12,
-    borderRadius: 26,
-    padding: 24,
-    backgroundColor: "#174B36",
-    shadowColor: "#0A2E1C",
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 6,
+  header: {
+    paddingTop: 8,
+    paddingBottom: 4,
+    gap: 8,
   },
-  heroLabel: {
-    color: "#B9DFC7",
+  headerBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#E4F2E8",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#C6E4D1",
+  },
+  headerBadgeText: {
+    color: "#176B43",
     fontSize: 11,
     fontWeight: "800",
-    letterSpacing: 1.2,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
   },
-  heroGreeting: {
-    color: "#FFFFFF",
-    fontSize: 30,
+  headerTitle: {
+    color: "#17251B",
+    fontSize: 28,
     fontWeight: "800",
-    letterSpacing: -0.8,
+    letterSpacing: -0.7,
   },
-  heroText: {
-    color: "#C5E5D0",
+  headerText: {
+    color: "#526057",
     fontSize: 15,
-    lineHeight: 23,
+    lineHeight: 22,
   },
   sectionHeader: {
     flexDirection: "row",

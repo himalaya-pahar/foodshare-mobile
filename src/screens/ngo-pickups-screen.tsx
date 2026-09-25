@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { formatBangladeshDateTime } from "@/lib/datetime";
+import PaginationControls from "@/components/pagination-controls";
 import { useAuth } from "@/providers/auth-provider";
 import {
   collectPickupRequest,
@@ -102,7 +103,16 @@ export default function NGOPickupsScreen() {
 
         try {
           const result = await getMyPickupRequests({ limit: PAGE_SIZE, offset });
-          if (active) setPage(result);
+          if (!active) return;
+          const maxSafeOffset = Math.max(
+            0,
+            Math.floor((result.total - 1) / PAGE_SIZE) * PAGE_SIZE,
+          );
+          if (offset > maxSafeOffset && result.total > 0) {
+            setOffset(maxSafeOffset);
+            return;
+          }
+          setPage(result);
         } catch (requestError) {
           if (active) {
             setError(
@@ -192,14 +202,17 @@ export default function NGOPickupsScreen() {
     <SafeAreaView style={styles.screen} edges={Platform.OS === "android" ? ["top", "left", "right"] : []}>
       <ScrollView contentContainerStyle={styles.container} contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false}>
         <View style={styles.brandRow}>
-          <View style={styles.logo}><Text style={styles.logoText}>F</Text></View>
           <Text style={styles.brand}>FoodShare</Text>
         </View>
 
-        <View style={styles.hero}>
-          <Text style={styles.heroLabel}>NGO WORKSPACE</Text>
-          <Text style={styles.heroTitle}>Your pickup requests.</Text>
-          <Text style={styles.heroText}>Browse food from Home, then track every request and collection here.</Text>
+        <View style={styles.header}>
+          <View style={styles.headerBadge}>
+            <Text style={styles.headerBadgeText}>NGO Workspace</Text>
+          </View>
+          <Text style={styles.headerTitle}>Your pickup requests</Text>
+          <Text style={styles.headerText}>
+            Browse food from Home, then track every request and collection here.
+          </Text>
         </View>
 
         <View style={styles.listHeader}>
@@ -217,12 +230,13 @@ export default function NGOPickupsScreen() {
         {!loading && !error && requests.length === 0 ? <View style={styles.emptyBox}><Text style={styles.emptyTitle}>No pickup requests yet</Text><Text style={styles.emptyText}>Open Home, search by area, and request an available donation.</Text></View> : null}
         {!loading && !error ? requests.map((request) => <PickupRequestCard key={request.id} request={request} busy={busyRequestId === request.id} onWithdraw={() => confirmWithdraw(request)} onCollect={() => confirmCollected(request)} />) : null}
 
-        {total > PAGE_SIZE ? (
-          <View style={styles.paginationRow}>
-            <Pressable disabled={!canGoBack} onPress={() => setOffset((value) => Math.max(0, value - PAGE_SIZE))} style={[styles.pageButton, !canGoBack && styles.disabled]}><Text style={styles.pageText}>Previous</Text></Pressable>
-            <Pressable disabled={!canGoForward} onPress={() => setOffset((value) => value + PAGE_SIZE)} style={[styles.pageButton, !canGoForward && styles.disabled]}><Text style={styles.pageText}>Next</Text></Pressable>
-          </View>
-        ) : null}
+        <PaginationControls
+          offset={offset}
+          limit={PAGE_SIZE}
+          total={total}
+          loading={loading}
+          onPageChange={setOffset}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -232,42 +246,65 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#F4F7F3" },
   container: { width: "100%", maxWidth: 640, alignSelf: "center", paddingHorizontal: 22, paddingBottom: 36, gap: 18 },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  logo: { width: 36, height: 36, alignItems: "center", justifyContent: "center", borderRadius: 12, backgroundColor: "#176B43" },
-  logoText: { color: "#FFFFFF", fontSize: 19, fontWeight: "800" },
+
   brand: { color: "#183B2A", fontSize: 21, fontWeight: "800" },
-  hero: { gap: 10, borderRadius: 26, padding: 24, backgroundColor: "#174B36", shadowColor: "#0A2E1C", shadowOpacity: 0.25, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
-  heroLabel: { color: "#B9DFC7", fontSize: 11, fontWeight: "800", letterSpacing: 1.2 },
-  heroTitle: { color: "#FFFFFF", fontSize: 29, fontWeight: "800", letterSpacing: -0.8 },
-  heroText: { color: "#C5E5D0", fontSize: 15, lineHeight: 23 },
+  header: {
+    paddingTop: 8,
+    paddingBottom: 4,
+    gap: 8,
+  },
+  headerBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#E4F2E8",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#C6E4D1",
+  },
+  headerBadgeText: {
+    color: "#176B43",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+  },
+  headerTitle: {
+    color: "#17251B",
+    fontSize: 28,
+    fontWeight: "800",
+    letterSpacing: -0.7,
+  },
+  headerText: {
+    color: "#526057",
+    fontSize: 15,
+    lineHeight: 22,
+  },
   listHeader: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 15, marginTop: 4 },
   sectionLabel: { color: "#6A8374", fontSize: 11, fontWeight: "800", letterSpacing: 1.1 },
   sectionTitle: { marginTop: 4, color: "#173526", fontSize: 23, fontWeight: "800" },
   refreshButton: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: "#E1F0E5" },
   refreshText: { color: "#176B43", fontSize: 13, fontWeight: "800" },
-  stateBox: { minHeight: 160, alignItems: "center", justifyContent: "center", gap: 14, borderRadius: 24, backgroundColor: "#FFFFFF", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
+  stateBox: { minHeight: 160, alignItems: "center", justifyContent: "center", gap: 14, borderRadius: 20, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#E5EBE7", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
   stateText: { color: "#66786D", fontSize: 14 },
   errorBox: { gap: 10, borderRadius: 20, padding: 18, backgroundColor: "#F2F5F3", borderWidth: 1, borderColor: "#D5E0D8" },
   errorText: { color: "#27362D", fontSize: 14, lineHeight: 20 },
   retryText: { color: "#176B43", fontSize: 14, fontWeight: "800" },
-  emptyBox: { alignItems: "center", borderRadius: 24, paddingHorizontal: 32, paddingVertical: 40, backgroundColor: "#FFFFFF", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
+  emptyBox: { alignItems: "center", borderRadius: 20, paddingHorizontal: 32, paddingVertical: 40, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#E5EBE7", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
   emptyTitle: { color: "#173526", fontSize: 19, fontWeight: "800" },
   emptyText: { marginTop: 8, color: "#66786D", fontSize: 14, lineHeight: 22, textAlign: "center" },
-  card: { gap: 10, borderRadius: 22, padding: 18, backgroundColor: "#FFFFFF", shadowColor: "#173526", shadowOpacity: 0.05, shadowRadius: 14, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
+  card: { gap: 12, borderRadius: 20, padding: 18, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#E5EBE7", shadowColor: "#173526", shadowOpacity: 0.05, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
   cardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
   requestTitle: { color: "#173526", fontSize: 18, fontWeight: "800" },
-  requestBadge: { borderRadius: 999, paddingHorizontal: 11, paddingVertical: 6, backgroundColor: "#E6F1E9" },
+  requestBadge: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, backgroundColor: "#E6F1E9", borderWidth: 1, borderColor: "#D1E3D7" },
   requestBadgeText: { color: "#176B43", fontSize: 11, fontWeight: "800" },
   detail: { color: "#496957", fontSize: 14, lineHeight: 20 },
   muted: { color: "#87968C", fontSize: 12 },
   requestMessage: { color: "#496957", fontSize: 14, lineHeight: 20 },
-  withdrawButton: { minHeight: 46, alignItems: "center", justifyContent: "center", marginTop: 4, borderRadius: 13, backgroundColor: "#ECEFF1" },
-  withdrawText: { color: "#455A64", fontSize: 14, fontWeight: "800" },
-  collectButton: { minHeight: 46, alignItems: "center", justifyContent: "center", marginTop: 4, borderRadius: 13, backgroundColor: "#176B43", shadowColor: "#0D3B22", shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
+  withdrawButton: { minHeight: 46, alignItems: "center", justifyContent: "center", marginTop: 4, borderRadius: 14, backgroundColor: "#FFFFFF", borderWidth: 1.5, borderColor: "#D5E0D8" },
+  withdrawText: { color: "#475569", fontSize: 14, fontWeight: "700" },
+  collectButton: { minHeight: 46, alignItems: "center", justifyContent: "center", marginTop: 4, borderRadius: 14, backgroundColor: "#176B43", shadowColor: "#0D3B22", shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
   collectText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
-  paginationRow: { flexDirection: "row", gap: 12 },
-  pageButton: { flex: 1, alignItems: "center", borderRadius: 14, paddingVertical: 14, backgroundColor: "#E1F0E5" },
-  pageText: { color: "#176B43", fontSize: 14, fontWeight: "800" },
-  disabled: { opacity: 0.45 },
   pressed: { opacity: 0.72, transform: [{ scale: 0.98 }] },
   accessBox: { flex: 1, alignItems: "center", justifyContent: "center", padding: 30 },
   accessTitle: { color: "#173526", fontSize: 22, fontWeight: "800" },

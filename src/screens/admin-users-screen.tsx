@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth } from "@/providers/auth-provider";
+import PaginationControls from "@/components/pagination-controls";
 import { formatBangladeshDate } from "@/lib/datetime";
 import {
   approveAdminUser,
@@ -422,16 +423,15 @@ export default function AdminUsersScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.brandRow}>
-          <View style={styles.logo}>
-            <Text style={styles.logoText}>F</Text>
-          </View>
           <Text style={styles.brand}>FoodShare</Text>
         </View>
 
-        <View style={styles.hero}>
-          <Text style={styles.heroLabel}>ADMINISTRATION</Text>
-          <Text style={styles.heroTitle}>Manage accounts.</Text>
-          <Text style={styles.heroText}>
+        <View style={styles.header}>
+          <View style={styles.headerBadge}>
+            <Text style={styles.headerBadgeText}>Administration</Text>
+          </View>
+          <Text style={styles.headerTitle}>Manage Accounts</Text>
+          <Text style={styles.headerText}>
             Review registrations and maintain a trusted FoodShare community.
           </Text>
         </View>
@@ -558,31 +558,13 @@ export default function AdminUsersScreen() {
             ))
           : null}
 
-        {total > 0 ? (
-          <View style={styles.paginationRow}>
-            <Pressable
-              accessibilityRole="button"
-              disabled={!canGoBack}
-              onPress={() => changePage(Math.max(0, offset - PAGE_SIZE))}
-              style={[styles.pageButton, !canGoBack && styles.buttonDisabled]}
-            >
-              <Text style={styles.pageButtonText}>Previous</Text>
-            </Pressable>
-
-            <Pressable
-              accessibilityRole="button"
-              disabled={!canGoForward}
-              onPress={() => changePage(offset + PAGE_SIZE)}
-              style={[
-                styles.pageButton,
-                styles.pageButtonPrimary,
-                !canGoForward && styles.buttonDisabled,
-              ]}
-            >
-              <Text style={styles.pageButtonPrimaryText}>Next</Text>
-            </Pressable>
-          </View>
-        ) : null}
+        <PaginationControls
+          offset={offset}
+          limit={PAGE_SIZE}
+          total={total}
+          loading={loading}
+          onPageChange={changePage}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -599,40 +581,40 @@ const styles = StyleSheet.create({
     gap: 18,
   },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  logo: {
-    width: 36,
-    height: 36,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 12,
-    backgroundColor: "#176B43",
-  },
-  logoText: { color: "#FFFFFF", fontSize: 19, fontWeight: "800" },
+
   brand: { color: "#183B2A", fontSize: 21, fontWeight: "800", letterSpacing: -0.4 },
-  hero: {
-    gap: 10,
-    borderRadius: 26,
-    padding: 24,
-    backgroundColor: "#174B36",
-    shadowColor: "#0A2E1C",
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 6,
+  header: {
+    paddingTop: 8,
+    paddingBottom: 4,
+    gap: 8,
   },
-  heroLabel: {
-    color: "#B9DFC7",
+  headerBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#E4F2E8",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#C6E4D1",
+  },
+  headerBadgeText: {
+    color: "#176B43",
     fontSize: 11,
     fontWeight: "800",
-    letterSpacing: 1.2,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
   },
-  heroTitle: {
-    color: "#FFFFFF",
-    fontSize: 30,
+  headerTitle: {
+    color: "#17251B",
+    fontSize: 28,
     fontWeight: "800",
-    letterSpacing: -0.8,
+    letterSpacing: -0.7,
   },
-  heroText: { color: "#C5E5D0", fontSize: 15, lineHeight: 23 },
+  headerText: {
+    color: "#526057",
+    fontSize: 15,
+    lineHeight: 22,
+  },
   tabRow: {
     flexDirection: "row",
     padding: 5,
@@ -691,13 +673,15 @@ const styles = StyleSheet.create({
   userRow: {
     flexDirection: "row",
     gap: 14,
-    borderRadius: 24,
-    padding: 20,
+    borderRadius: 20,
+    padding: 18,
     backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E5EBE7",
     shadowColor: "#173526",
-    shadowOpacity: 0.05,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
     elevation: 2,
   },
   avatar: {

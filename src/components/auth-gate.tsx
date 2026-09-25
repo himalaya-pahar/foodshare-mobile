@@ -96,9 +96,6 @@ export default function AuthGate() {
   if (status === "restoring") {
     return (
       <SafeAreaView style={styles.loading}>
-        <View style={styles.logoMark}>
-          <Text style={styles.logoLetter}>F</Text>
-        </View>
         <ActivityIndicator size="large" color="#176B43" />
 
         <Text style={styles.message}>
@@ -173,10 +170,6 @@ export default function AuthGate() {
   return (
     <SafeAreaView style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.logoMarkLarge}>
-          <Text style={styles.logoLetterLarge}>F</Text>
-        </View>
-
         <View style={styles.messageCard}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.message}>{message}</Text>
@@ -316,34 +309,7 @@ const styles = StyleSheet.create({
     padding: 24,
     gap: 20,
   },
-  logoMark: {
-    width: 48,
-    height: 48,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 16,
-    backgroundColor: "#176B43",
-  },
-  logoLetter: {
-    color: "#FFFFFF",
-    fontSize: 24,
-    fontWeight: "800",
-  },
-  logoMarkLarge: {
-    width: 56,
-    height: 56,
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center",
-    borderRadius: 18,
-    marginBottom: 24,
-    backgroundColor: "#176B43",
-  },
-  logoLetterLarge: {
-    color: "#FFFFFF",
-    fontSize: 28,
-    fontWeight: "800",
-  },
+
   content: {
     flexGrow: 1,
     justifyContent: "center",

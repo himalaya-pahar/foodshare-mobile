@@ -261,12 +261,14 @@ export default function DonationDetailScreen() {
 
         {donation && !loading && !error ? (
           <>
-            <View style={styles.hero}>
-              <View style={styles.statusBadge}>
-                <Text style={styles.statusText}>{statusLabel(donation.status)}</Text>
+            <View style={styles.header}>
+              <View style={styles.headerTopRow}>
+                <View style={styles.statusBadge}>
+                  <Text style={styles.statusText}>{statusLabel(donation.status)}</Text>
+                </View>
+                <Text style={styles.donationId}>ID #{donation.id}</Text>
               </View>
               <Text style={styles.title}>{donation.food_name}</Text>
-              <Text style={styles.donationId}>Donation ID {donation.id}</Text>
               <Text style={styles.area}>{donation.pickup_area}</Text>
               {postedBy ? (
                 <Text style={styles.postedBy}>Posted by {postedBy}</Text>
@@ -396,30 +398,47 @@ const styles = StyleSheet.create({
   errorBox: { gap: 10, borderRadius: 20, padding: 18, backgroundColor: "#F2F5F3", borderWidth: 1, borderColor: "#D5E0D8" },
   errorText: { color: "#27362D", fontSize: 14, lineHeight: 20 },
   retryText: { color: "#176B43", fontSize: 14, fontWeight: "800" },
-  hero: { gap: 10, borderRadius: 26, padding: 24, backgroundColor: "#174B36", shadowColor: "#0A2E1C", shadowOpacity: 0.25, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
-  statusBadge: { alignSelf: "flex-start", borderRadius: 999, paddingHorizontal: 11, paddingVertical: 7, backgroundColor: "#DDF3E4" },
+  header: {
+    paddingTop: 8,
+    paddingBottom: 4,
+    gap: 8,
+  },
+  headerTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  statusBadge: {
+    alignSelf: "flex-start",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: "#E2F4E8",
+    borderWidth: 1,
+    borderColor: "#BDE6CE",
+  },
   statusText: { color: "#176B43", fontSize: 12, fontWeight: "800" },
-  title: { color: "#FFFFFF", fontSize: 30, fontWeight: "800", letterSpacing: -0.8 },
-  donationId: { marginTop: -4, color: "#D7E9DC", fontSize: 12, fontWeight: "800" },
-  area: { color: "#C5E5D0", fontSize: 15, fontWeight: "700" },
-  postedBy: { color: "#E0F2E5", fontSize: 14, fontWeight: "800" },
+  title: { color: "#17251B", fontSize: 28, fontWeight: "800", letterSpacing: -0.7 },
+  donationId: { color: "#6E8275", fontSize: 13, fontWeight: "700" },
+  area: { color: "#526057", fontSize: 15, fontWeight: "600" },
+  postedBy: { color: "#176B43", fontSize: 14, fontWeight: "700" },
   mediaRow: { gap: 12 },
   image: { width: 250, height: 188, borderRadius: 18, backgroundColor: "#E1EAE3" },
   video: { width: 250, height: 188, overflow: "hidden", borderRadius: 18, backgroundColor: "#1C4834" },
   description: { color: "#4B6454", fontSize: 16, lineHeight: 24 },
-  detailsCard: { borderRadius: 22, padding: 20, backgroundColor: "#FFFFFF", shadowColor: "#173526", shadowOpacity: 0.05, shadowRadius: 14, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
+  detailsCard: { borderRadius: 20, padding: 20, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#E5EBE7", shadowColor: "#173526", shadowOpacity: 0.05, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
   detailRow: { gap: 6 },
   detailLabel: { color: "#728278", fontSize: 11, fontWeight: "800", letterSpacing: 0.9 },
   detailValue: { color: "#264332", fontSize: 16, fontWeight: "700", lineHeight: 22 },
   divider: { height: 1, marginVertical: 16, backgroundColor: "#E4ECE6" },
-  notesCard: { gap: 16, borderRadius: 22, padding: 20, backgroundColor: "#FFFFFF", shadowColor: "#173526", shadowOpacity: 0.05, shadowRadius: 14, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
+  notesCard: { gap: 16, borderRadius: 20, padding: 20, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#E5EBE7", shadowColor: "#173526", shadowOpacity: 0.05, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
   noteBlock: { gap: 6 },
   noteLabel: { color: "#728278", fontSize: 11, fontWeight: "800", letterSpacing: 0.9 },
   noteText: { color: "#425A49", fontSize: 15, lineHeight: 22 },
-  requestCard: { gap: 16, borderRadius: 24, padding: 22, backgroundColor: "#E4F2E8", shadowColor: "#0F462B", shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
-  requestLabel: { color: "#397152", fontSize: 12, fontWeight: "800", letterSpacing: 1 },
-  requestTitle: { marginTop: -10, color: "#173526", fontSize: 24, fontWeight: "800", letterSpacing: -0.4 },
-  requestDescription: { marginTop: -10, color: "#536B5B", fontSize: 15, lineHeight: 21 },
+  requestCard: { gap: 14, borderRadius: 20, padding: 20, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#E5EBE7", shadowColor: "#173526", shadowOpacity: 0.05, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
+  requestLabel: { color: "#176B43", fontSize: 11, fontWeight: "800", letterSpacing: 1 },
+  requestTitle: { color: "#17251B", fontSize: 22, fontWeight: "800", letterSpacing: -0.4 },
+  requestDescription: { color: "#526057", fontSize: 14, lineHeight: 21 },
   field: { gap: 8 },
   fieldLabel: { color: "#3A5244", fontSize: 13, fontWeight: "800", letterSpacing: 0.2 },
   dateButton: { minHeight: 52, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderWidth: 1.5, borderColor: "#CFDED3", borderRadius: 14, paddingHorizontal: 16, backgroundColor: "#FFFFFF" },
@@ -428,7 +447,7 @@ const styles = StyleSheet.create({
   messageInput: { minHeight: 96, borderWidth: 1.5, borderColor: "#CFDED3", borderRadius: 14, paddingHorizontal: 16, paddingTop: 14, color: "#1E3829", fontSize: 15, backgroundColor: "#FFFFFF" },
   requestError: { borderRadius: 14, padding: 14, color: "#27362D", fontSize: 14, lineHeight: 20, backgroundColor: "#F2F5F3", borderWidth: 1, borderColor: "#D5E0D8" },
   requestSuccess: { borderRadius: 12, padding: 14, color: "#176B43", fontSize: 14, lineHeight: 20, backgroundColor: "#FFFFFF" },
-  submitButton: { minHeight: 56, alignItems: "center", justifyContent: "center", borderRadius: 16, backgroundColor: "#176B43", shadowColor: "#0D3B22", shadowOpacity: 0.18, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 4 },
-  submitButtonText: { color: "#FFFFFF", fontSize: 17, fontWeight: "800" },
+  submitButton: { minHeight: 52, alignItems: "center", justifyContent: "center", borderRadius: 14, backgroundColor: "#176B43", shadowColor: "#0D3B22", shadowOpacity: 0.16, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 3 },
+  submitButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
   pressed: { opacity: 0.72, transform: [{ scale: 0.98 }] },
 });

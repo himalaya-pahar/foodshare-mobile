@@ -93,9 +93,6 @@ export default function VerifyEmailRoute() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.brandRow}>
-          <View style={styles.logo}>
-            <Text style={styles.logoText}>F</Text>
-          </View>
           <Text style={styles.brand}>FoodShare</Text>
         </View>
 
@@ -182,19 +179,7 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 24,
   },
-  logo: {
-    width: 38,
-    height: 38,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 12,
-    backgroundColor: "#176B43",
-  },
-  logoText: {
-    color: "#FFFFFF",
-    fontSize: 20,
-    fontWeight: "800",
-  },
+
   brand: {
     color: "#183B2A",
     fontSize: 22,

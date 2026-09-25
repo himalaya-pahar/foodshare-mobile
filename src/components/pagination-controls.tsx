@@ -1,0 +1,156 @@
+import React from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+
+export interface PaginationControlsProps {
+  offset: number;
+  limit: number;
+  total: number;
+  loading?: boolean;
+  onPageChange: (newOffset: number) => void;
+}
+
+export default function PaginationControls({
+  offset,
+  limit,
+  total,
+  loading = false,
+  onPageChange,
+}: PaginationControlsProps) {
+  if (total <= limit) {
+    return null;
+  }
+
+  const currentPage = Math.floor(offset / limit) + 1;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const firstItem = total === 0 ? 0 : offset + 1;
+  const lastItem = Math.min(offset + limit, total);
+
+  const canGoBack = offset > 0 && !loading;
+  const canGoForward = offset + limit < total && !loading;
+
+  function handlePrevious() {
+    if (!canGoBack) return;
+    const nextOffset = Math.max(0, offset - limit);
+    onPageChange(nextOffset);
+  }
+
+  function handleNext() {
+    if (!canGoForward) return;
+    const nextOffset = offset + limit;
+    onPageChange(nextOffset);
+  }
+
+  return (
+    <View style={styles.container}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Previous page"
+        accessibilityState={{ disabled: !canGoBack }}
+        disabled={!canGoBack}
+        onPress={handlePrevious}
+        style={({ pressed }) => [
+          styles.navButton,
+          !canGoBack && styles.buttonDisabled,
+          pressed && canGoBack && styles.buttonPressed,
+        ]}
+      >
+        <Text style={[styles.navButtonText, !canGoBack && styles.textDisabled]}>
+          ‹ Previous
+        </Text>
+      </Pressable>
+
+      <View style={styles.pageInfo}>
+        <Text style={styles.pageLabel}>
+          Page <Text style={styles.pageHighlight}>{currentPage}</Text> of{" "}
+          <Text style={styles.pageHighlight}>{totalPages}</Text>
+        </Text>
+        <Text style={styles.countLabel}>
+          {firstItem}–{lastItem} of {total}
+        </Text>
+      </View>
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Next page"
+        accessibilityState={{ disabled: !canGoForward }}
+        disabled={!canGoForward}
+        onPress={handleNext}
+        style={({ pressed }) => [
+          styles.navButton,
+          !canGoForward && styles.buttonDisabled,
+          pressed && canGoForward && styles.buttonPressed,
+        ]}
+      >
+        <Text style={[styles.navButtonText, !canGoForward && styles.textDisabled]}>
+          Next ›
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#E2E8E4",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginVertical: 12,
+    shadowColor: "#0D3B22",
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+  },
+  pageInfo: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
+  },
+  pageLabel: {
+    color: "#4A5D52",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  pageHighlight: {
+    color: "#17251B",
+    fontWeight: "800",
+  },
+  countLabel: {
+    color: "#84968C",
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  navButton: {
+    minHeight: 40,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: "#F2F5F3",
+    borderWidth: 1,
+    borderColor: "#D5E0D8",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  navButtonText: {
+    color: "#176B43",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  buttonDisabled: {
+    backgroundColor: "#F8FAF8",
+    borderColor: "#EAEFEA",
+    opacity: 0.55,
+  },
+  textDisabled: {
+    color: "#9CAEA3",
+  },
+  buttonPressed: {
+    opacity: 0.75,
+    transform: [{ scale: 0.97 }],
+  },
+});
