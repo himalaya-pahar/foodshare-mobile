@@ -374,14 +374,12 @@ function UserRow({
   disabled,
   onSelect,
   onApproval,
-  onDelete,
 }: {
   item: AdminUser;
   currentAdminId: number;
   disabled: boolean;
   onSelect: (user: AdminUser) => void;
   onApproval: (user: AdminUser, decision: ApprovalDecision) => void;
-  onDelete: (user: AdminUser) => void;
 }) {
   const initial = item.full_name.trim().charAt(0).toUpperCase() || "U";
   const statusConfig = getStatusBadgeConfig(item);
@@ -426,17 +424,27 @@ function UserRow({
           </View>
         ) : null}
 
-        <View style={styles.metaRow}>
-          <Text style={styles.meta}>
-            {formatRole(item.role)} · {formatJoinedDate(item.created_at)}
-          </Text>
-
-          <View style={styles.viewDetailsChip}>
-            <Text style={styles.viewDetailsText}>View Details ›</Text>
-          </View>
-        </View>
+        <Text style={styles.meta}>
+          {formatRole(item.role)} · {formatJoinedDate(item.created_at)}
+        </Text>
 
         <View style={styles.actions}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`View details for ${item.full_name}`}
+            onPress={(e) => {
+              e.stopPropagation?.();
+              onSelect(item);
+            }}
+            style={({ pressed }) => [
+              styles.viewDetailsButton,
+              pressed && styles.buttonPressed,
+            ]}
+          >
+            <Text style={styles.viewDetailsButtonText}>View Details</Text>
+            <Ionicons name="chevron-forward" size={14} color="#16673E" />
+          </Pressable>
+
           {statusConfig.isPendingReview ? (
             <>
               <Pressable
@@ -492,23 +500,7 @@ function UserRow({
 
           {item.id === currentAdminId ? (
             <Text style={styles.currentAccount}>Your account</Text>
-          ) : (
-            <Pressable
-              accessibilityRole="button"
-              disabled={disabled}
-              onPress={(e) => {
-                e.stopPropagation?.();
-                onDelete(item);
-              }}
-              style={({ pressed }) => [
-                styles.deleteButton,
-                pressed && !disabled && styles.buttonPressed,
-                disabled && styles.buttonDisabled,
-              ]}
-            >
-              <Text style={styles.deleteButtonText}>Delete</Text>
-            </Pressable>
-          )}
+          ) : null}
         </View>
       </View>
     </Pressable>
@@ -857,7 +849,6 @@ export default function AdminUsersScreen() {
                 disabled={busyUserId !== null}
                 onSelect={(target) => setSelectedUser(target)}
                 onApproval={handleApproval}
-                onDelete={confirmDelete}
               />
             ))
           : null}
@@ -1211,19 +1202,25 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 2,
   },
-  viewDetailsChip: {
+  viewDetailsButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
+    gap: 6,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
     backgroundColor: "#EAF5EE",
     borderWidth: 1,
     borderColor: "#BEDECB",
+    shadowColor: "#0D3B22",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
   },
-  viewDetailsText: {
+  viewDetailsButtonText: {
     color: "#16673E",
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: "800",
   },
 
