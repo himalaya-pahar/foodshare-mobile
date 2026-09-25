@@ -202,7 +202,7 @@ export default function NGOPickupsScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={Platform.OS === "android" ? ["top", "left", "right"] : []}>
       <ScrollView contentContainerStyle={styles.container} contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false}>
-        <BrandHeader tagline="NGO Food Rescue Operations" />
+        <BrandHeader />
 
         <View style={styles.header}>
           <View style={styles.headerBadge}>

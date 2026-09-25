@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import BrandHeader from "@/components/brand-header";
 import { useAuth } from "@/providers/auth-provider";
 import { verifyEmail } from "@/services/auth";
 
@@ -93,7 +94,7 @@ export default function VerifyEmailRoute() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.brandRow}>
-          <Text style={styles.brand}>FoodShare</Text>
+          <BrandHeader size="large" />
         </View>
 
         <View style={styles.card}>
@@ -174,23 +175,16 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   brandRow: {
-    flexDirection: "row",
+    marginBottom: 20,
     alignItems: "center",
-    gap: 10,
-    marginBottom: 24,
-  },
-
-  brand: {
-    color: "#183B2A",
-    fontSize: 22,
-    fontWeight: "800",
-    letterSpacing: -0.4,
   },
   card: {
     width: "100%",
     maxWidth: 440,
     borderRadius: 24,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FAFDFB",
+    borderWidth: 1.2,
+    borderColor: "#DCE7E0",
     padding: 28,
     shadowColor: "#0D3B22",
     shadowOpacity: 0.06,
@@ -217,7 +211,7 @@ const styles = StyleSheet.create({
   iconText: {
     fontSize: 26,
     fontWeight: "800",
-    color: "#176B43",
+    color: "#16673E",
   },
   iconTextMuted: {
     fontSize: 24,
@@ -246,14 +240,16 @@ const styles = StyleSheet.create({
   },
   button: {
     width: "100%",
-    backgroundColor: "#176B43",
+    backgroundColor: "#16673E",
+    borderWidth: 1,
+    borderColor: "#1E8250",
     borderRadius: 16,
     minHeight: 52,
     padding: 16,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#0D3B22",
-    shadowOpacity: 0.16,
+    shadowOpacity: 0.22,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 3,

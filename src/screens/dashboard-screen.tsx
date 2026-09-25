@@ -155,7 +155,7 @@ export default function DashboardScreen() {
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
       >
-        <BrandHeader tagline="Community Impact & Overview" />
+        <BrandHeader />
 
         <View style={styles.header}>
           <View style={styles.headerBadge}>

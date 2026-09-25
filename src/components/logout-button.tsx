@@ -76,9 +76,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     borderRadius: 16,
     paddingHorizontal: 20,
-    backgroundColor: "#F4F7F4",
-    borderWidth: 1,
-    borderColor: "#DCE5DF",
+    backgroundColor: "#FAFDFB",
+    borderWidth: 1.2,
+    borderColor: "#DCE7E0",
+    shadowColor: "#0D331D",
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
   },
   buttonText: {
     color: "#2C3E33",
@@ -86,8 +91,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   arrow: {
-    color: "#5A6D61",
+    color: "#16673E",
     fontSize: 20,
+    fontWeight: "800",
   },
   pressed: {
     opacity: 0.72,

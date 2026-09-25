@@ -423,7 +423,7 @@ export default function AdminUsersScreen() {
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
       >
-        <BrandHeader tagline="Community Verification & Governance" />
+        <BrandHeader />
 
         <View style={styles.header}>
           <View style={styles.headerBadge}>

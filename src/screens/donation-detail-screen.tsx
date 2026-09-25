@@ -242,7 +242,7 @@ export default function DonationDetailScreen() {
           >
             <Ionicons name="arrow-back" size={20} color="#176B43" />
           </Pressable>
-          <BrandHeader size="compact" showBadge={false} />
+          <BrandHeader size="compact" />
         </View>
 
         {loading ? (

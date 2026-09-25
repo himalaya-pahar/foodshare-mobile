@@ -137,7 +137,7 @@ export default function LoginScreen({ onSignup }: LoginScreenProps) {
         >
           <View style={styles.form}>
             <View style={styles.brandRow}>
-              <BrandHeader size="large" showBadge={false} />
+              <BrandHeader size="large" />
             </View>
 
             <View style={styles.header}>

@@ -251,7 +251,7 @@ export default function SignupScreen({ onBack }: SignupScreenProps) {
         >
           <View style={styles.form}>
             <View style={styles.brandRow}>
-              <BrandHeader size="large" showBadge={false} />
+              <BrandHeader size="large" />
             </View>
 
             {!verificationSentEmail && !success ? (

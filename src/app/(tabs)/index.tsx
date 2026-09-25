@@ -329,7 +329,7 @@ export default function HomeScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        <BrandHeader tagline="Community Food Surplus Rescue Network" />
+        <BrandHeader />
 
         <View style={styles.header}>
           <View style={styles.headerBadge}>
@@ -522,21 +522,23 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 52,
     borderWidth: 1.5,
-    borderColor: "#D6E2D9",
+    borderColor: "#D2DFD6",
     borderRadius: 15,
     paddingHorizontal: 16,
     color: "#1E3829",
     fontSize: 15,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FAFDFB",
   },
   searchButton: {
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 15,
     paddingHorizontal: 18,
-    backgroundColor: "#176B43",
+    backgroundColor: "#16673E",
+    borderWidth: 1,
+    borderColor: "#1E8250",
     shadowColor: "#0D3B22",
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.18,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
     elevation: 3,

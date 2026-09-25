@@ -377,7 +377,7 @@ export default function StatusHistoryScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={Platform.OS === "android" ? ["top", "left", "right"] : []}>
       <ScrollView contentContainerStyle={styles.container} contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false}>
-        <BrandHeader tagline="Pickup & Verification Timeline" />
+        <BrandHeader />
 
         <View style={styles.header}>
           <View style={styles.headerBadge}>

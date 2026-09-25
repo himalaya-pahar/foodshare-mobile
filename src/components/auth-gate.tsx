@@ -172,7 +172,7 @@ export default function AuthGate() {
     <SafeAreaView style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.brandContainer}>
-          <BrandHeader size="large" showBadge={false} />
+          <BrandHeader size="large" />
         </View>
 
         <View style={styles.messageCard}>
