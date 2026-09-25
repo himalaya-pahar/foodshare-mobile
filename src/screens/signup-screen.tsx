@@ -14,6 +14,7 @@ import {
   type TextInputProps,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 
 import BrandHeader from "@/components/brand-header";
 import PasswordVisibilityToggle from "@/components/password-visibility-toggle";
@@ -269,7 +270,7 @@ export default function SignupScreen({ onBack }: SignupScreenProps) {
             {verificationSentEmail ? (
               <View style={styles.verificationCard}>
                 <View style={styles.verifyIconWrapper}>
-                  <Text style={styles.verifyIcon}>✉</Text>
+                  <Ionicons name="mail-outline" size={30} color="#16673E" />
                 </View>
 
                 <Text style={styles.title}>Verify Your Email</Text>
@@ -757,10 +758,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 16,
   },
-  verifyIcon: {
-    fontSize: 28,
-    color: "#176B43",
-  },
+
   emailHighlight: {
     fontWeight: "800",
     color: "#17251B",

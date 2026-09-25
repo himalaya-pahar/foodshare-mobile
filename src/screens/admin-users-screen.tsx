@@ -445,58 +445,7 @@ function UserRow({
             <Ionicons name="chevron-forward" size={14} color="#16673E" />
           </Pressable>
 
-          {statusConfig.isPendingReview ? (
-            <>
-              <Pressable
-                accessibilityRole="button"
-                disabled={disabled}
-                onPress={(e) => {
-                  e.stopPropagation?.();
-                  onApproval(item, "REJECTED");
-                }}
-                style={({ pressed }) => [
-                  styles.rejectButton,
-                  pressed && !disabled && styles.buttonPressed,
-                  disabled && styles.buttonDisabled,
-                ]}
-              >
-                <Text style={styles.rejectButtonText}>Reject</Text>
-              </Pressable>
 
-              <Pressable
-                accessibilityRole="button"
-                disabled={disabled || statusConfig.isPendingEmail}
-                onPress={(e) => {
-                  e.stopPropagation?.();
-                  onApproval(item, "APPROVED");
-                }}
-                style={({ pressed }) => [
-                  styles.approveButton,
-                  statusConfig.isPendingEmail && styles.approveButtonDisabled,
-                  pressed &&
-                    !disabled &&
-                    !statusConfig.isPendingEmail &&
-                    styles.buttonPressed,
-                  (disabled || statusConfig.isPendingEmail) &&
-                    styles.buttonDisabled,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.approveButtonText,
-                    statusConfig.isPendingEmail &&
-                      styles.approveButtonTextDisabled,
-                  ]}
-                >
-                  Approve
-                </Text>
-              </Pressable>
-
-              {statusConfig.isPendingEmail ? (
-                <Text style={styles.unverifiedNote}>Email not verified yet</Text>
-              ) : null}
-            </>
-          ) : null}
 
           {item.id === currentAdminId ? (
             <Text style={styles.currentAccount}>Your account</Text>
