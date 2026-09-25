@@ -88,6 +88,9 @@ function PasswordField({
 export default function SignupScreen({ onBack }: SignupScreenProps) {
   const [fullName, setFullName] = useState("");
   const [organizationName, setOrganizationName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [area, setArea] = useState("");
+  const [address, setAddress] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -207,6 +210,9 @@ export default function SignupScreen({ onBack }: SignupScreenProps) {
       const user = await signup({
         full_name: name,
         organization_name: organizationName.trim() || null,
+        phone: phone.trim() || null,
+        area: area.trim() || null,
+        address: address.trim() || null,
         email: normalizedEmail,
         password,
         role,
@@ -440,6 +446,38 @@ export default function SignupScreen({ onBack }: SignupScreenProps) {
                   onChangeText={setOrganizationName}
                   maxLength={150}
                   autoCapitalize="words"
+                  editable={!busy}
+                />
+
+                <FormField
+                  label="Phone number (optional)"
+                  placeholder="+880 1XXX XXXXXX"
+                  value={phone}
+                  onChangeText={setPhone}
+                  maxLength={20}
+                  keyboardType="phone-pad"
+                  autoComplete="tel"
+                  editable={!busy}
+                />
+
+                <FormField
+                  label="Area / City"
+                  placeholder="e.g. Dhanmondi, Dhaka"
+                  value={area}
+                  onChangeText={setArea}
+                  maxLength={100}
+                  autoCapitalize="words"
+                  editable={!busy}
+                />
+
+                <FormField
+                  label="Address"
+                  placeholder="Street address or landmark"
+                  value={address}
+                  onChangeText={setAddress}
+                  maxLength={255}
+                  autoCapitalize="sentences"
+                  autoComplete="street-address"
                   editable={!busy}
                 />
 
