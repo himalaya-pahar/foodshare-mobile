@@ -30,19 +30,62 @@ interface AiChatPanelProps {
   chat: UseAiChat;
 }
 
-const SUGGESTED_PROMPTS = [
-  "How do I request a pickup as an NGO?",
-  "What food donations are accepted?",
-  "How do pickup confirmations work?",
+interface SuggestedQuestion {
+  id: string;
+  category: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  subtitle: string;
+  prompt: string;
+}
+
+const SUGGESTED_QUESTIONS: SuggestedQuestion[] = [
+  {
+    id: "food-safety",
+    category: "Food Safety",
+    icon: "restaurant",
+    title: "Safe Surplus Food Donations",
+    subtitle: "What cooked and packaged food items restaurants can donate",
+    prompt: "What types of surplus food can restaurants donate safely on FoodShare, and what items are restricted?",
+  },
+  {
+    id: "storage-rules",
+    category: "Storage & Safety",
+    icon: "thermometer-outline",
+    title: "Temperature & Packing Standards",
+    subtitle: "Hygiene standards and packing required before NGO handover",
+    prompt: "What are the temperature control and packaging rules for food donations before pickup?",
+  },
+  {
+    id: "ngo-flow",
+    category: "NGO Logistics",
+    icon: "car-outline",
+    title: "Claiming & Scheduling Pickups",
+    subtitle: "Step-by-step claiming process and arrival window coordination",
+    prompt: "How does an NGO claim available food surplus and schedule a verified pickup window?",
+  },
+  {
+    id: "verification",
+    category: "Verification",
+    icon: "shield-checkmark-outline",
+    title: "Handover Verification & Safety",
+    subtitle: "How verification codes work between restaurant and driver",
+    prompt: "How does the pickup verification code work during food handover at the restaurant?",
+  },
+  {
+    id: "delays",
+    category: "Policies & Delays",
+    icon: "time-outline",
+    title: "Handling Delays & Expiry Windows",
+    subtitle: "What to do when pickup deadline passes or driver is delayed",
+    prompt: "What should be done if an NGO pickup is delayed or the food deadline passes?",
+  },
 ];
 
 export function AiChatPanel({ open, onClose, chat }: AiChatPanelProps) {
   const scrollRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
 
-  // Length is the right dep here: the hook only appends, so a new length
-  // means there's new content to scroll into view. Tiny delay lets layout
-  // settle before scrolling.
   useEffect(() => {
     if (!open) return;
     const t = setTimeout(() => {
@@ -52,10 +95,6 @@ export function AiChatPanel({ open, onClose, chat }: AiChatPanelProps) {
   }, [open, chat.messages.length]);
 
   const { messages, status, error, send, retry, reset } = chat;
-
-  // `error` covers both 422 validation and 5xx/network failures. The
-  // inline Retry affordance on the user bubble handles 5xx; the same string
-  // is forwarded to the input as the validation message.
   const validationMessage = error;
 
   return (
@@ -78,39 +117,55 @@ export function AiChatPanel({ open, onClose, chat }: AiChatPanelProps) {
           onPress={onClose}
         />
 
-        <View style={[styles.sheetWrap]}>
+        <View style={styles.sheetWrap}>
           <View style={[styles.sheet, { paddingBottom: insets.bottom }]}>
+            <View style={styles.dragHandleContainer}>
+              <View style={styles.dragHandle} />
+            </View>
+
             <View style={styles.header}>
               <View style={styles.headerLeft}>
-                <Text style={styles.title}>FoodShare AI Assistant</Text>
+                <View style={styles.headerTitleRow}>
+                  <View style={styles.headerIconWrap}>
+                    <Ionicons name="sparkles" size={15} color="#FFFFFF" />
+                  </View>
+                  <Text style={styles.title}>FoodShare AI</Text>
+                  <View style={styles.headerBadge}>
+                    <View style={styles.headerBadgeDot} />
+                    <Text style={styles.headerBadgeText}>Live</Text>
+                  </View>
+                </View>
                 <Text style={styles.disclaimer}>
-                  Informational only — cannot perform actions
+                  Instant guidance for donors, NGOs & food safety
                 </Text>
               </View>
+
               <View style={styles.headerActions}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Clear conversation"
-                  hitSlop={8}
-                  onPress={reset}
-                  style={({ pressed }) => [
-                    styles.headerButton,
-                    pressed && styles.headerButtonPressed,
-                  ]}
-                >
-                  <Text style={styles.clearText}>Clear</Text>
-                </Pressable>
+                {messages.length > 0 ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Clear conversation"
+                    hitSlop={8}
+                    onPress={reset}
+                    style={({ pressed }) => [
+                      styles.headerButton,
+                      pressed && styles.headerButtonPressed,
+                    ]}
+                  >
+                    <Ionicons name="trash-outline" size={16} color="#5A7163" />
+                  </Pressable>
+                ) : null}
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Close"
                   hitSlop={8}
                   onPress={onClose}
                   style={({ pressed }) => [
-                    styles.headerButton,
-                    pressed && styles.headerButtonPressed,
+                    styles.closeButton,
+                    pressed && styles.closeButtonPressed,
                   ]}
                 >
-                  <Ionicons name="close" size={22} color={AiColors.text} />
+                  <Ionicons name="close" size={18} color="#233B2C" />
                 </Pressable>
               </View>
             </View>
@@ -126,38 +181,54 @@ export function AiChatPanel({ open, onClose, chat }: AiChatPanelProps) {
             >
               {messages.length === 0 ? (
                 <View style={styles.emptyState}>
-                  <View style={styles.emptyIconWrap}>
-                    <Ionicons
-                      name="chatbubble-ellipses-outline"
-                      size={32}
-                      color={AiColors.brand}
-                    />
+                  <View style={styles.heroCard}>
+                    <View style={styles.emptyIconWrap}>
+                      <Ionicons name="sparkles" size={24} color="#16673E" />
+                    </View>
+                    <Text style={styles.emptyTitle}>
+                      FoodShare Intelligence
+                    </Text>
+                    <Text style={styles.emptyHint}>
+                      Ask questions about food safety guidelines, NGO pickup workflows, packaging standards, and community policies.
+                    </Text>
                   </View>
-                  <Text style={styles.emptyTitle}>
-                    Ask anything about FoodShare
-                  </Text>
-                  <Text style={styles.emptyHint}>
-                    Grounded answers on donation rules, pickup workflows, and platform policies.
-                  </Text>
+
                   <View style={styles.promptsContainer}>
-                    <Text style={styles.promptsHeader}>Suggested questions:</Text>
-                    {SUGGESTED_PROMPTS.map((prompt) => (
+                    <View style={styles.promptsHeaderRow}>
+                      <Ionicons name="bulb-outline" size={14} color="#16673E" />
+                      <Text style={styles.promptsHeader}>Meaningful suggested questions</Text>
+                    </View>
+
+                    {SUGGESTED_QUESTIONS.map((item) => (
                       <Pressable
-                        key={prompt}
+                        key={item.id}
                         accessibilityRole="button"
-                        accessibilityLabel={`Ask: ${prompt}`}
-                        onPress={() => void send(prompt)}
+                        accessibilityLabel={`Ask: ${item.title}`}
+                        onPress={() => void send(item.prompt)}
                         style={({ pressed }) => [
-                          styles.promptChip,
-                          pressed && styles.promptChipPressed,
+                          styles.promptCard,
+                          pressed && styles.promptCardPressed,
                         ]}
                       >
+                        <View style={styles.promptIconWrap}>
+                          <Ionicons
+                            name={item.icon}
+                            size={16}
+                            color="#16673E"
+                          />
+                        </View>
+                        <View style={styles.promptTextWrap}>
+                          <View style={styles.promptMetaRow}>
+                            <Text style={styles.promptCategory}>{item.category}</Text>
+                          </View>
+                          <Text style={styles.promptTitle}>{item.title}</Text>
+                          <Text style={styles.promptSubtitle}>{item.subtitle}</Text>
+                        </View>
                         <Ionicons
-                          name="chatbubble-outline"
-                          size={13}
-                          color={AiColors.brand}
+                          name="chevron-forward"
+                          size={16}
+                          color="#7B9284"
                         />
-                        <Text style={styles.promptChipText}>{prompt}</Text>
                       </Pressable>
                     ))}
                   </View>
@@ -208,151 +279,257 @@ const styles = StyleSheet.create({
   },
   sheetWrap: {
     width: "100%",
-    // Explicit height (not maxHeight) so the inner sheet's `flex: 1` and
-    // body's `flex: 1` have a definite parent height to flex against —
-    // maxHeight alone leaves the wrap at intrinsic-content height, which
-    // collapses the body to 0 (transparent UI symptom).
     height: SHEET_MAX_HEIGHT_PCT,
   },
-  // Flex column: header (intrinsic) + body ScrollView (flex:1, fills leftover)
-  // + input (intrinsic, pinned to the bottom because it's the last flex child).
   sheet: {
     flex: 1,
-    backgroundColor: AiColors.sheetBg,
-    borderTopLeftRadius: AiRadius.sheet,
-    borderTopRightRadius: AiRadius.sheet,
+    backgroundColor: "#F4F7F4",
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
     overflow: "hidden",
+  },
+  dragHandleContainer: {
+    alignItems: "center",
+    paddingTop: 10,
+    paddingBottom: 4,
+    backgroundColor: "#FAFDFB",
+  },
+  dragHandle: {
+    width: 38,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#CBDAD0",
   },
   header: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: AiSpacing.four,
-    paddingTop: AiSpacing.three,
-    paddingBottom: AiSpacing.two,
+    paddingHorizontal: 18,
+    paddingTop: 8,
+    paddingBottom: 14,
+    backgroundColor: "#FAFDFB",
   },
   headerLeft: {
     flex: 1,
-    paddingRight: AiSpacing.two,
+    gap: 3,
+  },
+  headerTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  headerIconWrap: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    backgroundColor: "#16673E",
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
     fontSize: 17,
-    fontWeight: "700",
-    color: AiColors.text,
+    fontWeight: "800",
+    color: "#13281B",
+    letterSpacing: -0.3,
+  },
+  headerBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 999,
+    backgroundColor: "#E3F4EA",
+    borderWidth: 1,
+    borderColor: "#C5E5D1",
+  },
+  headerBadgeDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: "#1EA858",
+  },
+  headerBadgeText: {
+    fontSize: 9,
+    fontWeight: "800",
+    color: "#16673E",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
   },
   disclaimer: {
     fontSize: 12,
-    color: AiColors.textMuted,
-    marginTop: 2,
+    color: "#5C7164",
   },
   headerActions: {
     flexDirection: "row",
     alignItems: "center",
-    gap: AiSpacing.one,
+    gap: 8,
   },
   headerButton: {
-    paddingHorizontal: AiSpacing.two,
-    paddingVertical: AiSpacing.one,
-    borderRadius: 8,
+    width: 34,
+    height: 34,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10,
+    backgroundColor: "#EAEFEA",
   },
   headerButtonPressed: {
-    backgroundColor: AiColors.headerPressed,
+    backgroundColor: "#DCE5DC",
   },
-  clearText: {
-    fontSize: 14,
-    color: AiColors.textMuted,
-    fontWeight: "600",
+  closeButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: "#EAEFEA",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  closeButtonPressed: {
+    backgroundColor: "#DCE5DC",
   },
   divider: {
     height: 1,
-    backgroundColor: AiColors.border,
+    backgroundColor: "#DDE7E1",
   },
   body: {
     flex: 1,
-    backgroundColor: AiColors.inputBg,
+    backgroundColor: "#F3F6F3",
   },
   bodyContent: {
-    paddingVertical: AiSpacing.two,
+    paddingVertical: 14,
     flexGrow: 1,
   },
   emptyState: {
-    flex: 1,
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+    gap: 16,
+  },
+  heroCard: {
+    alignItems: "center",
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 22,
+    backgroundColor: "#FAFDFB",
+    borderWidth: 1.2,
+    borderColor: "#DCE6DF",
+    shadowColor: "#0D2E1B",
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 1,
+    gap: 8,
+  },
+  emptyIconWrap: {
+    width: 50,
+    height: 50,
+    borderRadius: 16,
+    backgroundColor: "#E2F3E7",
+    borderWidth: 1.5,
+    borderColor: "#C5E6D1",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: AiSpacing.four,
-    paddingVertical: AiSpacing.six,
+    marginBottom: 4,
   },
   emptyTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: AiColors.text,
-    marginTop: AiSpacing.three,
+    fontSize: 17,
+    fontWeight: "800",
+    color: "#13281B",
+    letterSpacing: -0.3,
   },
   emptyHint: {
     fontSize: 13,
-    color: AiColors.textMuted,
-    marginTop: 4,
+    lineHeight: 19,
+    color: "#5C7164",
     textAlign: "center",
-  },
-  typingWrap: {
-    paddingHorizontal: AiSpacing.three,
-    marginTop: AiSpacing.two,
-  },
-  errorBanner: {
-    marginHorizontal: AiSpacing.three,
-    marginTop: AiSpacing.two,
-    padding: AiSpacing.two,
-    borderRadius: AiRadius.bubble,
-    backgroundColor: AiColors.errorSoft,
-    borderWidth: 1,
-    borderColor: AiColors.errorBorder,
-  },
-  errorText: {
-    fontSize: 13,
-    color: AiColors.error,
-  },
-  emptyIconWrap: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: AiColors.brandSoft,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: AiSpacing.one,
   },
   promptsContainer: {
     width: "100%",
-    marginTop: AiSpacing.four,
-    gap: AiSpacing.two,
+    gap: 9,
   },
-  promptsHeader: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: AiColors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 2,
-    alignSelf: "flex-start",
-  },
-  promptChip: {
+  promptsHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: AiSpacing.two,
-    backgroundColor: AiColors.promptChipBg,
+    gap: 6,
+    paddingHorizontal: 4,
+    marginBottom: 2,
+  },
+  promptsHeader: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#5C7164",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+  },
+  promptCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: "#FAFDFB",
+    borderWidth: 1.2,
+    borderColor: "#DCE6E0",
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    shadowColor: "#0D2C1A",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  promptCardPressed: {
+    backgroundColor: "#EEF6F1",
+    borderColor: "#C4E2D0",
+    transform: [{ scale: 0.985 }],
+  },
+  promptIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: "#E2F2E7",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  promptTextWrap: {
+    flex: 1,
+    gap: 2,
+  },
+  promptMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  promptCategory: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#16673E",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  promptTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#15281D",
+  },
+  promptSubtitle: {
+    fontSize: 12,
+    color: "#596E61",
+    lineHeight: 16,
+  },
+  typingWrap: {
+    paddingHorizontal: 16,
+    marginTop: 8,
+  },
+  errorBanner: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    padding: 12,
+    borderRadius: 14,
+    backgroundColor: "#F2F5F3",
     borderWidth: 1,
-    borderColor: AiColors.promptChipBorder,
-    borderRadius: AiRadius.input,
-    paddingHorizontal: AiSpacing.three,
-    paddingVertical: 10,
-    width: "100%",
+    borderColor: "#D5E0D8",
   },
-  promptChipPressed: {
-    backgroundColor: AiColors.brandSoft,
-  },
-  promptChipText: {
+  errorText: {
     fontSize: 13,
-    fontWeight: "500",
-    color: AiColors.text,
-    flexShrink: 1,
+    color: "#27362D",
+    lineHeight: 18,
   },
 });

@@ -17,6 +17,7 @@ import {
   formatBangladeshTimelineTime,
 } from "@/lib/datetime";
 import { useAuth } from "@/providers/auth-provider";
+import BrandHeader from "@/components/brand-header";
 import PaginationControls from "@/components/pagination-controls";
 import { getRestaurantDonations } from "@/services/donations";
 import {
@@ -121,7 +122,7 @@ function legacyDonationFlows(
     return {
       donation_id: donationId,
       pickup_request_id: null,
-      food_name: donation?.food_name ?? `Donation ID ${donationId}`,
+      food_name: donation?.food_name ?? "Food Surplus Donation",
       posted_at: donation?.created_at ?? items[0]?.created_at ?? null,
       donor_organization_name: donorOrganizationName,
       receiver_organization_name: null,
@@ -204,7 +205,7 @@ function FlowCard({
       <View style={styles.flowHeader}>
         <View style={styles.flowHeaderCopy}>
           <Text style={styles.foodName} numberOfLines={2}>
-            {flow.food_name?.trim() || `Donation ID ${flow.donation_id}`}
+            {flow.food_name?.trim() || "Food Surplus Donation"}
           </Text>
           {flow.posted_at ? (
             <Text style={styles.postedAt}>Posted {formatBangladeshDateTime(flow.posted_at)}</Text>
@@ -225,14 +226,9 @@ function FlowCard({
           <Text style={styles.organizationName} numberOfLines={2}>
             {organizationLabel(
               flow.donor_organization_name,
-              flow.donor_user_id
-                ? `Organization account ID ${flow.donor_user_id}`
-                : "Donor organization unavailable",
+              "Verified Donor Partner",
             )}
           </Text>
-          {showOrganizationIds && flow.donor_user_id ? (
-            <Text style={styles.organizationId}>Account ID {flow.donor_user_id}</Text>
-          ) : null}
         </View>
         <View style={styles.organizationDivider} />
         <View style={styles.organizationColumn}>
@@ -240,14 +236,9 @@ function FlowCard({
           <Text style={styles.organizationName} numberOfLines={2}>
             {organizationLabel(
               flow.receiver_organization_name,
-              flow.receiver_user_id
-                ? `Organization account ID ${flow.receiver_user_id}`
-                : receiverFallback,
+              receiverFallback,
             )}
           </Text>
-          {showOrganizationIds && flow.receiver_user_id ? (
-            <Text style={styles.organizationId}>Account ID {flow.receiver_user_id}</Text>
-          ) : null}
         </View>
       </View>
 
@@ -386,9 +377,7 @@ export default function StatusHistoryScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={Platform.OS === "android" ? ["top", "left", "right"] : []}>
       <ScrollView contentContainerStyle={styles.container} contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false}>
-        <View style={styles.brandRow}>
-          <Text style={styles.brand}>FoodShare</Text>
-        </View>
+        <BrandHeader tagline="Pickup & Verification Timeline" />
 
         <View style={styles.header}>
           <View style={styles.headerBadge}>
@@ -484,26 +473,26 @@ const styles = StyleSheet.create({
   listHeader: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 16 },
   sectionLabel: { color: "#6A8374", fontSize: 11, fontWeight: "800", letterSpacing: 1.1 },
   sectionTitle: { marginTop: 4, color: "#173526", fontSize: 24, fontWeight: "800", letterSpacing: -0.4 },
-  refreshButton: { borderRadius: 13, paddingHorizontal: 14, paddingVertical: 11, backgroundColor: "#E1F0E5" },
-  refreshText: { color: "#176B43", fontSize: 14, fontWeight: "800" },
-  stateBox: { minHeight: 165, alignItems: "center", justifyContent: "center", gap: 14, borderRadius: 20, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#E5EBE7", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
+  refreshButton: { borderRadius: 13, paddingHorizontal: 14, paddingVertical: 11, backgroundColor: "#E4F2E8", borderWidth: 1, borderColor: "#C6E4D1" },
+  refreshText: { color: "#16673E", fontSize: 14, fontWeight: "800" },
+  stateBox: { minHeight: 165, alignItems: "center", justifyContent: "center", gap: 14, borderRadius: 22, backgroundColor: "#FAFDFB", borderWidth: 1.2, borderColor: "#DCE6DF", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
   stateText: { color: "#66786D", fontSize: 14 },
   errorBox: { gap: 10, borderRadius: 20, padding: 18, backgroundColor: "#F2F5F3", borderWidth: 1, borderColor: "#D5E0D8" },
   errorText: { color: "#27362D", fontSize: 14, lineHeight: 20 },
-  retryText: { color: "#176B43", fontSize: 14, fontWeight: "800" },
-  emptyBox: { alignItems: "center", borderRadius: 20, paddingHorizontal: 32, paddingVertical: 40, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#E5EBE7", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
+  retryText: { color: "#16673E", fontSize: 14, fontWeight: "800" },
+  emptyBox: { alignItems: "center", borderRadius: 22, paddingHorizontal: 32, paddingVertical: 40, backgroundColor: "#FAFDFB", borderWidth: 1.2, borderColor: "#DCE6DF", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
   emptyTitle: { color: "#173526", fontSize: 19, fontWeight: "800" },
   emptyText: { marginTop: 8, color: "#66786D", fontSize: 14, lineHeight: 22, textAlign: "center" },
-  flowCard: { gap: 16, borderRadius: 20, padding: 18, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#E5EBE7", shadowColor: "#173526", shadowOpacity: 0.05, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
+  flowCard: { gap: 16, borderRadius: 22, padding: 18, backgroundColor: "#FAFDFB", borderWidth: 1.2, borderColor: "#DCE6DF", shadowColor: "#173526", shadowOpacity: 0.05, shadowRadius: 14, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
   flowHeader: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 12 },
   flowHeaderCopy: { flex: 1, gap: 6 },
   foodName: { color: "#173526", fontSize: 19, fontWeight: "800", lineHeight: 25, letterSpacing: -0.3 },
   postedAt: { color: "#6E8275", fontSize: 13, lineHeight: 19 },
   statusBadge: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: "#E2F4E8", borderWidth: 1, borderColor: "#BDE6CE" },
-  statusBadgeText: { color: "#176B43", fontSize: 11, fontWeight: "800" },
+  statusBadgeText: { color: "#16673E", fontSize: 11, fontWeight: "800" },
   statusBadgeTerminal: { backgroundColor: "#ECEFF1", borderColor: "#CFD8DC" },
   statusBadgeTextTerminal: { color: "#546E7A" },
-  organizationBox: { flexDirection: "row", borderRadius: 14, padding: 12, backgroundColor: "#F1F6F2" },
+  organizationBox: { flexDirection: "row", borderRadius: 14, padding: 12, backgroundColor: "#F2F7F4", borderWidth: 1, borderColor: "#DCE7DF" },
   organizationColumn: { flex: 1, gap: 4 },
   organizationDivider: { width: 1, marginHorizontal: 12, backgroundColor: "#D8E6DB" },
   organizationLabel: { color: "#6E8275", fontSize: 10, fontWeight: "800", letterSpacing: 0.7 },

@@ -14,6 +14,7 @@ import { useAuth } from "@/providers/auth-provider";
 import LoginScreen from "@/screens/login-screen";
 import SignupScreen from "@/screens/signup-screen";
 import { resendVerificationEmail } from "@/services/auth";
+import BrandHeader from "@/components/brand-header";
 
 export default function AuthGate() {
   const {
@@ -170,6 +171,10 @@ export default function AuthGate() {
   return (
     <SafeAreaView style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.brandContainer}>
+          <BrandHeader size="large" showBadge={false} />
+        </View>
+
         <View style={styles.messageCard}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.message}>{message}</Text>
@@ -318,10 +323,16 @@ const styles = StyleSheet.create({
     maxWidth: 480,
     alignSelf: "center",
   },
+  brandContainer: {
+    marginBottom: 20,
+    alignItems: "center",
+  },
   messageCard: {
     borderRadius: 24,
     padding: 28,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FAFDFB",
+    borderWidth: 1.2,
+    borderColor: "#DCE7E0",
     shadowColor: "#0D3B22",
     shadowOpacity: 0.06,
     shadowRadius: 16,
@@ -359,14 +370,16 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   button: {
-    backgroundColor: "#176B43",
+    backgroundColor: "#16673E",
+    borderWidth: 1,
+    borderColor: "#1E8250",
     borderRadius: 16,
     minHeight: 56,
     padding: 16,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#0D3B22",
-    shadowOpacity: 0.18,
+    shadowOpacity: 0.22,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 5 },
     elevation: 4,
@@ -433,8 +446,8 @@ const styles = StyleSheet.create({
     minHeight: 52,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: "#176B43",
-    backgroundColor: "#FFFFFF",
+    borderColor: "#16673E",
+    backgroundColor: "#FAFDFB",
     alignItems: "center",
     justifyContent: "center",
     padding: 14,

@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import BrandHeader from "@/components/brand-header";
 import { useAuth } from "@/providers/auth-provider";
 import { getAdminStats } from "@/services/admin";
 import {
@@ -154,9 +155,7 @@ export default function DashboardScreen() {
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.brandRow}>
-          <Text style={styles.brand}>FoodShare</Text>
-        </View>
+        <BrandHeader tagline="Community Impact & Overview" />
 
         <View style={styles.header}>
           <View style={styles.headerBadge}>
@@ -330,7 +329,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: "#DFF1E5",
+    backgroundColor: "#E4F2E8",
+    borderWidth: 1,
+    borderColor: "#C6E4D1",
   },
   refreshButtonPressed: {
     opacity: 0.75,
@@ -340,7 +341,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   refreshButtonText: {
-    color: "#176B43",
+    color: "#16673E",
     fontSize: 13,
     fontWeight: "800",
   },
@@ -349,8 +350,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 14,
-    borderRadius: 24,
-    backgroundColor: "#FFFFFF",
+    borderRadius: 22,
+    backgroundColor: "#FAFDFB",
+    borderWidth: 1.2,
+    borderColor: "#DCE6DF",
     shadowColor: "#173526",
     shadowOpacity: 0.04,
     shadowRadius: 12,
@@ -373,7 +376,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     borderRadius: 22,
     padding: 20,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FAFDFB",
+    borderWidth: 1.2,
+    borderColor: "#DCE6DF",
     shadowColor: "#173526",
     shadowOpacity: 0.05,
     shadowRadius: 14,

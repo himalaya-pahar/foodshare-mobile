@@ -6,36 +6,37 @@ import { Spacing } from "@/constants/theme";
  * of the app.
  */
 export const AiColors = {
-  brand: "#176B43",
-  brandSoft: "#DDF3E4",
-  brandPressed: "#12593A",
-  text: "#17251B",
-  textMuted: "#526057",
-  border: "#E5EBE7",
-  sheetBg: "#FFFFFF",
-  backdrop: "rgba(0, 0, 0, 0.4)",
-  shadow: "#0D3B22",
+  brand: "#16673E",
+  brandSoft: "#E3F3E8",
+  brandPressed: "#114F2F",
+  text: "#15281D",
+  textMuted: "#546A5D",
+  border: "#D5E2DA",
+  sheetBg: "#F4F7F4",
+  cardBg: "#FAFDFB",
+  backdrop: "rgba(10, 24, 16, 0.45)",
+  shadow: "#0C311C",
   error: "#27362D",
   errorSoft: "#F2F5F3",
-  inputBg: "#F4F7F3",
-  headerPressed: "#EEF1EF",
-  softBubble: "#F2F4F2",
+  inputBg: "#FFFFFF",
+  headerPressed: "#E5EEE8",
+  softBubble: "#EDF3EF",
   errorBorder: "#D5E0D8",
   errorButtonPressed: "#E4ECE7",
-  sourceChipBg: "#F0F5F2",
-  sourceChipBorder: "#D5E3DA",
-  promptChipBg: "#F3F7F4",
-  promptChipBorder: "#DEE7E1",
+  sourceChipBg: "#EBF3EE",
+  sourceChipBorder: "#CFE0D5",
+  promptChipBg: "#FAFDFB",
+  promptChipBorder: "#D4E3D9",
 } as const;
 
 export const AiSpacing = Spacing;
 
 export const AiRadius = {
   fab: 28,
-  bubble: 16,
-  sheet: 24,
-  input: 14,
+  bubble: 18,
+  sheet: 26,
+  input: 16,
 } as const;
 
 /** Maximum height of the chat sheet, as a fraction of screen height. */
-export const SHEET_MAX_HEIGHT_PCT = "88%" as const;
+export const SHEET_MAX_HEIGHT_PCT = "90%" as const;

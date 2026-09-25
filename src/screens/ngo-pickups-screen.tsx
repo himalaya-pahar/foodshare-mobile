@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import BrandHeader from "@/components/brand-header";
 import { formatBangladeshDateTime } from "@/lib/datetime";
 import PaginationControls from "@/components/pagination-controls";
 import { useAuth } from "@/providers/auth-provider";
@@ -42,7 +43,7 @@ function PickupRequestCard({
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <Text style={styles.requestTitle}>Donation ID {request.donation_id}</Text>
+        <Text style={styles.requestTitle}>Surplus Pickup Request</Text>
         <View style={styles.requestBadge}>
           <Text style={styles.requestBadgeText}>{request.status}</Text>
         </View>
@@ -201,9 +202,7 @@ export default function NGOPickupsScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={Platform.OS === "android" ? ["top", "left", "right"] : []}>
       <ScrollView contentContainerStyle={styles.container} contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false}>
-        <View style={styles.brandRow}>
-          <Text style={styles.brand}>FoodShare</Text>
-        </View>
+        <BrandHeader tagline="NGO Food Rescue Operations" />
 
         <View style={styles.header}>
           <View style={styles.headerBadge}>
@@ -283,27 +282,27 @@ const styles = StyleSheet.create({
   listHeader: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 15, marginTop: 4 },
   sectionLabel: { color: "#6A8374", fontSize: 11, fontWeight: "800", letterSpacing: 1.1 },
   sectionTitle: { marginTop: 4, color: "#173526", fontSize: 23, fontWeight: "800" },
-  refreshButton: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: "#E1F0E5" },
-  refreshText: { color: "#176B43", fontSize: 13, fontWeight: "800" },
-  stateBox: { minHeight: 160, alignItems: "center", justifyContent: "center", gap: 14, borderRadius: 20, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#E5EBE7", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
+  refreshButton: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: "#E4F2E8", borderWidth: 1, borderColor: "#C6E4D1" },
+  refreshText: { color: "#16673E", fontSize: 13, fontWeight: "800" },
+  stateBox: { minHeight: 160, alignItems: "center", justifyContent: "center", gap: 14, borderRadius: 22, backgroundColor: "#FAFDFB", borderWidth: 1.2, borderColor: "#DCE6DF", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
   stateText: { color: "#66786D", fontSize: 14 },
   errorBox: { gap: 10, borderRadius: 20, padding: 18, backgroundColor: "#F2F5F3", borderWidth: 1, borderColor: "#D5E0D8" },
   errorText: { color: "#27362D", fontSize: 14, lineHeight: 20 },
-  retryText: { color: "#176B43", fontSize: 14, fontWeight: "800" },
-  emptyBox: { alignItems: "center", borderRadius: 20, paddingHorizontal: 32, paddingVertical: 40, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#E5EBE7", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
+  retryText: { color: "#16673E", fontSize: 14, fontWeight: "800" },
+  emptyBox: { alignItems: "center", borderRadius: 22, paddingHorizontal: 32, paddingVertical: 40, backgroundColor: "#FAFDFB", borderWidth: 1.2, borderColor: "#DCE6DF", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
   emptyTitle: { color: "#173526", fontSize: 19, fontWeight: "800" },
   emptyText: { marginTop: 8, color: "#66786D", fontSize: 14, lineHeight: 22, textAlign: "center" },
-  card: { gap: 12, borderRadius: 20, padding: 18, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#E5EBE7", shadowColor: "#173526", shadowOpacity: 0.05, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
+  card: { gap: 12, borderRadius: 22, padding: 18, backgroundColor: "#FAFDFB", borderWidth: 1.2, borderColor: "#DCE6DF", shadowColor: "#173526", shadowOpacity: 0.05, shadowRadius: 14, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
   cardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
   requestTitle: { color: "#173526", fontSize: 18, fontWeight: "800" },
   requestBadge: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, backgroundColor: "#E6F1E9", borderWidth: 1, borderColor: "#D1E3D7" },
-  requestBadgeText: { color: "#176B43", fontSize: 11, fontWeight: "800" },
+  requestBadgeText: { color: "#16673E", fontSize: 11, fontWeight: "800" },
   detail: { color: "#496957", fontSize: 14, lineHeight: 20 },
   muted: { color: "#87968C", fontSize: 12 },
   requestMessage: { color: "#496957", fontSize: 14, lineHeight: 20 },
-  withdrawButton: { minHeight: 46, alignItems: "center", justifyContent: "center", marginTop: 4, borderRadius: 14, backgroundColor: "#FFFFFF", borderWidth: 1.5, borderColor: "#D5E0D8" },
+  withdrawButton: { minHeight: 48, alignItems: "center", justifyContent: "center", marginTop: 4, borderRadius: 14, backgroundColor: "#F4F7F4", borderWidth: 1.2, borderColor: "#D2E0D6" },
   withdrawText: { color: "#475569", fontSize: 14, fontWeight: "700" },
-  collectButton: { minHeight: 46, alignItems: "center", justifyContent: "center", marginTop: 4, borderRadius: 14, backgroundColor: "#176B43", shadowColor: "#0D3B22", shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
+  collectButton: { minHeight: 48, alignItems: "center", justifyContent: "center", marginTop: 4, borderRadius: 14, backgroundColor: "#16673E", borderWidth: 1, borderColor: "#1E8250", shadowColor: "#0D3B22", shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
   collectText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
   pressed: { opacity: 0.72, transform: [{ scale: 0.98 }] },
   accessBox: { flex: 1, alignItems: "center", justifyContent: "center", padding: 30 },

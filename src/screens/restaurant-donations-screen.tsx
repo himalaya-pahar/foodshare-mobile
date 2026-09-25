@@ -16,7 +16,9 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 
+import BrandHeader from "@/components/brand-header";
 import DonationMediaModal from "@/components/donation-media-modal";
 import PaginationControls from "@/components/pagination-controls";
 import { formatBangladeshDateTime } from "@/lib/datetime";
@@ -704,7 +706,10 @@ function DonationCard({
 
       <View style={styles.cardContent}>
         <View style={styles.cardHeader}>
-          <Text style={styles.donationIdTop}>Donation ID {donation.id}</Text>
+          <View style={styles.listingBadge}>
+            <Ionicons name="leaf" size={11} color="#16673E" />
+            <Text style={styles.listingBadgeText}>Active Listing</Text>
+          </View>
           <View style={[styles.statusBadge, styles[`status${donation.status}`]]}>
             <Text style={styles.statusText}>{statusLabel(donation.status)}</Text>
           </View>
@@ -917,9 +922,7 @@ export default function RestaurantDonationsScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={Platform.OS === "android" ? ["top", "left", "right"] : []}>
       <ScrollView contentContainerStyle={styles.container} contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false}>
-        <View style={styles.brandRow}>
-          <Text style={styles.brand}>FoodShare</Text>
-        </View>
+        <BrandHeader tagline="Restaurant Surplus Operations" />
 
         <View style={styles.header}>
           <View style={styles.headerBadge}>
@@ -1017,14 +1020,16 @@ const styles = StyleSheet.create({
   listHeader: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 8 },
   sectionLabel: { color: "#6A8374", fontSize: 11, fontWeight: "800", letterSpacing: 1.1 },
   sectionTitle: { marginTop: 4, color: "#173526", fontSize: 24, fontWeight: "800", letterSpacing: -0.4 },
-  addButton: { borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: "#176B43", shadowColor: "#0D3B22", shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
+  addButton: { borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: "#16673E", borderWidth: 1, borderColor: "#1E8250", shadowColor: "#0D3B22", shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
   addButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
-  donationCard: { overflow: "hidden", borderWidth: 1, borderColor: "#E5EEE7", borderRadius: 20, backgroundColor: "#FFFFFF", shadowColor: "#173526", shadowOpacity: 0.05, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
+  donationCard: { overflow: "hidden", borderWidth: 1.2, borderColor: "#DCE6DF", borderRadius: 22, backgroundColor: "#FAFDFB", shadowColor: "#0D2E1B", shadowOpacity: 0.05, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 2 },
   cardContent: { padding: 18, gap: 14 },
   mediaContainer: { backgroundColor: "#E4EEE6" },
   heroMediaImage: { width: 340, height: 220, backgroundColor: "#E4EEE6" },
   heroMediaVideo: { width: 340, height: 220, backgroundColor: "#1C4834" },
   cardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  listingBadge: { flexDirection: "row", alignItems: "center", gap: 4, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, backgroundColor: "#EAF5EE", borderWidth: 1, borderColor: "#CBE4D4" },
+  listingBadgeText: { color: "#16673E", fontSize: 11, fontWeight: "800" },
   statusBadge: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: "#E4F2E8", borderWidth: 1, borderColor: "#D1E3D7" },
   statusAVAILABLE: { backgroundColor: "#E2F4E8", borderColor: "#BDE6CE" },
   statusRESERVED: { backgroundColor: "#FFF0D4", borderColor: "#F7D8A7" },
@@ -1036,7 +1041,6 @@ const styles = StyleSheet.create({
   areaText: { color: "#66786D", fontSize: 13, fontWeight: "700" },
   foodName: { color: "#173526", fontSize: 20, fontWeight: "800", letterSpacing: -0.4 },
   donationIdentity: { gap: 5 },
-  donationIdTop: { color: "#6E8275", fontSize: 11, fontWeight: "700", letterSpacing: 0.3 },
   quantityText: { color: "#496957", fontSize: 15, fontWeight: "700" },
   detailsPanel: { borderRadius: 14, padding: 12, backgroundColor: "#F3F7F4" },
   metaRow: { flexDirection: "row", alignItems: "stretch" },
@@ -1045,18 +1049,18 @@ const styles = StyleSheet.create({
   metaLabel: { color: "#7A8C80", fontSize: 10, fontWeight: "800", letterSpacing: 0.7 },
   metaValue: { color: "#284634", fontSize: 13, fontWeight: "700" },
   cardActions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 },
-  secondaryButton: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: "#FFFFFF", borderWidth: 1.5, borderColor: "#D5E0D8" },
-  secondaryButtonText: { color: "#176B43", fontSize: 13, fontWeight: "800" },
+  secondaryButton: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: "#EAF3ED", borderWidth: 1, borderColor: "#CCE2D4" },
+  secondaryButtonText: { color: "#16673E", fontSize: 13, fontWeight: "800" },
   cancelButton: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: "#FDF2F2", borderWidth: 1, borderColor: "#F8B4B4" },
   cancelText: { color: "#9B1C1C", fontSize: 13, fontWeight: "800" },
-  completeButton: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: "#176B43", shadowColor: "#0D3B22", shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  completeButton: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: "#16673E", borderWidth: 1, borderColor: "#1E8250", shadowColor: "#0D3B22", shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   completeText: { color: "#FFFFFF", fontSize: 13, fontWeight: "800" },
-  loadingBox: { minHeight: 160, alignItems: "center", justifyContent: "center", gap: 14, borderRadius: 24, backgroundColor: "#FFFFFF", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
+  loadingBox: { minHeight: 160, alignItems: "center", justifyContent: "center", gap: 14, borderRadius: 22, backgroundColor: "#FAFDFB", borderWidth: 1.2, borderColor: "#DCE6DF", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
   loadingText: { color: "#66786D", fontSize: 14 },
   errorBox: { gap: 10, borderRadius: 20, padding: 18, backgroundColor: "#F2F5F3", borderWidth: 1, borderColor: "#D5E0D8" },
   errorText: { color: "#27362D", fontSize: 14, lineHeight: 20 },
   retryText: { color: "#176B43", fontSize: 14, fontWeight: "800" },
-  emptyBox: { alignItems: "center", borderRadius: 24, paddingHorizontal: 32, paddingVertical: 40, backgroundColor: "#FFFFFF", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
+  emptyBox: { alignItems: "center", borderRadius: 22, paddingHorizontal: 32, paddingVertical: 40, backgroundColor: "#FAFDFB", borderWidth: 1.2, borderColor: "#DCE6DF", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
   emptyTitle: { color: "#173526", fontSize: 19, fontWeight: "800" },
   emptyText: { marginTop: 8, color: "#66786D", fontSize: 14, lineHeight: 22, textAlign: "center" },
   paginationRow: { flexDirection: "row", justifyContent: "space-between", gap: 12 },
@@ -1068,7 +1072,7 @@ const styles = StyleSheet.create({
   accessTitle: { color: "#173526", fontSize: 22, fontWeight: "800" },
   accessText: { marginTop: 8, color: "#66786D", fontSize: 15, textAlign: "center" },
   modalScreen: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(13, 36, 24, 0.5)" },
-  modalCard: { maxHeight: "92%", borderTopLeftRadius: 28, borderTopRightRadius: 28, backgroundColor: "#F7FAF7" },
+  modalCard: { maxHeight: "92%", borderTopLeftRadius: 28, borderTopRightRadius: 28, backgroundColor: "#FAFDFB" },
   modalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16, paddingHorizontal: 22, paddingVertical: 20, borderBottomWidth: 1, borderBottomColor: "#E3ECE5" },
   modalEyebrow: { color: "#6A8374", fontSize: 11, fontWeight: "800", letterSpacing: 1.1 },
   modalTitle: { marginTop: 4, color: "#173526", fontSize: 22, fontWeight: "800" },
@@ -1085,11 +1089,11 @@ const styles = StyleSheet.create({
   dateButtonText: { color: "#1E3829", fontSize: 15 },
   dateButtonIcon: { color: "#176B43", fontSize: 18, fontWeight: "800" },
   formError: { borderRadius: 14, padding: 14, color: "#27362D", fontSize: 14, lineHeight: 20, backgroundColor: "#F2F5F3", borderWidth: 1, borderColor: "#D5E0D8" },
-  saveButton: { minHeight: 56, alignItems: "center", justifyContent: "center", marginTop: 4, borderRadius: 16, backgroundColor: "#176B43", shadowColor: "#0D3B22", shadowOpacity: 0.18, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 4 },
+  saveButton: { minHeight: 56, alignItems: "center", justifyContent: "center", marginTop: 4, borderRadius: 16, backgroundColor: "#16673E", borderWidth: 1, borderColor: "#1E8250", shadowColor: "#0D3B22", shadowOpacity: 0.24, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 4 },
   saveButtonText: { color: "#FFFFFF", fontSize: 17, fontWeight: "800" },
   requestContent: { padding: 22, paddingBottom: 36, gap: 14 },
   requestSubtitle: { color: "#66786D", fontSize: 14, marginBottom: 4 },
-  requestCard: { gap: 10, borderRadius: 18, padding: 16, backgroundColor: "#FFFFFF", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 1 },
+  requestCard: { gap: 10, borderRadius: 18, padding: 16, backgroundColor: "#FAFDFB", borderWidth: 1.2, borderColor: "#DCE6DF", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 1 },
   requestHeader: { flexDirection: "row", justifyContent: "space-between", gap: 10 },
   requestName: { color: "#1E3829", fontSize: 17, fontWeight: "800" },
   requestStatus: { color: "#176B43", fontSize: 12, fontWeight: "800" },
@@ -1098,6 +1102,6 @@ const styles = StyleSheet.create({
   requestActions: { flexDirection: "row", gap: 10, marginTop: 4 },
   rejectButton: { flex: 1, minHeight: 46, alignItems: "center", justifyContent: "center", borderRadius: 13, backgroundColor: "#ECEFF1" },
   rejectText: { color: "#455A64", fontSize: 14, fontWeight: "800" },
-  acceptButton: { flex: 1, minHeight: 46, alignItems: "center", justifyContent: "center", borderRadius: 13, backgroundColor: "#176B43" },
+  acceptButton: { flex: 1, minHeight: 46, alignItems: "center", justifyContent: "center", borderRadius: 13, backgroundColor: "#16673E", borderWidth: 1, borderColor: "#1E8250" },
   acceptText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
 });

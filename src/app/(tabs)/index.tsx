@@ -14,7 +14,9 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 
+import BrandHeader from "@/components/brand-header";
 import { useAuth } from "@/providers/auth-provider";
 import { AiAssistant } from "@/components/ai-assistant";
 import { formatBangladeshDateTime } from "@/lib/datetime";
@@ -67,7 +69,7 @@ function DonationCard({
   const videos = donation.media.filter((item) => item.media_type === "VIDEO");
   const postedBy = donation.restaurant_organization_name?.trim() ||
     donation.restaurant_full_name?.trim() ||
-    `Restaurant account ID ${donation.restaurant_id}`;
+    "Verified Partner Restaurant";
 
   return (
     <Pressable
@@ -108,7 +110,10 @@ function DonationCard({
 
       <View style={styles.cardContent}>
         <View style={styles.cardTopRow}>
-          <Text style={styles.donationIdTop}>Donation ID {donation.id}</Text>
+          <View style={styles.verifiedSurplusBadge}>
+            <Ionicons name="shield-checkmark" size={12} color="#16673E" />
+            <Text style={styles.verifiedSurplusText}>Verified Surplus</Text>
+          </View>
           <View style={styles.availableBadge}>
             <View style={styles.availableDot} />
             <Text style={styles.availableText}>Available</Text>
@@ -159,6 +164,10 @@ function DonationCard({
 
         <View style={styles.cardFooter}>
           <Text style={styles.postedAt}>Posted {formatBangladeshDateTime(donation.created_at)}</Text>
+          <View style={styles.cardActionBtn}>
+            <Text style={styles.cardActionText}>Details</Text>
+            <Ionicons name="arrow-forward" size={12} color="#FFFFFF" />
+          </View>
         </View>
       </View>
     </Pressable>
@@ -320,9 +329,7 @@ export default function HomeScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.brandRow}>
-          <Text style={styles.brand}>FoodShare</Text>
-        </View>
+        <BrandHeader tagline="Community Food Surplus Rescue Network" />
 
         <View style={styles.header}>
           <View style={styles.headerBadge}>
@@ -595,15 +602,15 @@ const styles = StyleSheet.create({
   },
   donationCard: {
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "#E5EEE7",
-    borderRadius: 24,
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#173526",
-    shadowOpacity: 0.07,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 3,
+    borderWidth: 1.2,
+    borderColor: "#DCE6DF",
+    borderRadius: 22,
+    backgroundColor: "#FAFDFB",
+    shadowColor: "#0D2E1B",
+    shadowOpacity: 0.05,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 2,
   },
   cardContent: {
     padding: 20,
@@ -614,6 +621,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 10,
+  },
+  verifiedSurplusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 4.5,
+    borderRadius: 8,
+    backgroundColor: "#EAF5EE",
+    borderWidth: 1,
+    borderColor: "#CBE4D4",
+  },
+  verifiedSurplusText: {
+    color: "#16673E",
+    fontSize: 11,
+    fontWeight: "800",
   },
   availableBadge: {
     flexDirection: "row",
@@ -648,12 +671,6 @@ const styles = StyleSheet.create({
   },
   cardIdentity: {
     gap: 5,
-  },
-  donationIdTop: {
-    color: "#6E8275",
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.3,
   },
   postedAt: {
     color: "#6E8275",
@@ -750,7 +767,24 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderTopWidth: 1,
     borderTopColor: "#EDF2EE",
-    backgroundColor: "#FAFCFA",
+    backgroundColor: "#F7FAF8",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  cardActionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    backgroundColor: "#16673E",
+  },
+  cardActionText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "800",
   },
   errorBox: {
     gap: 10,
@@ -785,11 +819,13 @@ const styles = StyleSheet.create({
   },
   emptyBox: {
     alignItems: "center",
-    borderRadius: 24,
+    borderRadius: 22,
     paddingHorizontal: 32,
     paddingVertical: 40,
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#173526",
+    backgroundColor: "#FAFDFB",
+    borderWidth: 1.2,
+    borderColor: "#DCE6DF",
+    shadowColor: "#0D2E1B",
     shadowOpacity: 0.04,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },

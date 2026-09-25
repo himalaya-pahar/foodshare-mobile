@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef } from "react";
-import { Animated, Platform, Pressable, StyleSheet, View } from "react-native";
+import { Animated, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Spacing } from "@/constants/theme";
 
@@ -70,7 +70,10 @@ export function AiFab({ onPress }: AiFabProps) {
             pressed && styles.fabPressed,
           ]}
         >
-          <Ionicons name="chatbubbles" size={26} color="#FFFFFF" />
+          <Ionicons name="sparkles" size={24} color="#FFFFFF" />
+          <View style={styles.aiTag}>
+            <Text style={styles.aiTagText}>AI</Text>
+          </View>
         </Pressable>
       </Animated.View>
     </View>
@@ -86,21 +89,42 @@ const styles = StyleSheet.create({
   },
   shadowWrap: {
     borderRadius: AiRadius.fab,
-    shadowColor: AiColors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowColor: "#0D3E21",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.32,
+    shadowRadius: 14,
+    elevation: 8,
   },
   fab: {
     width: FAB_SIZE,
     height: FAB_SIZE,
     borderRadius: AiRadius.fab,
-    backgroundColor: AiColors.brand,
+    backgroundColor: "#16673E",
+    borderWidth: 1.5,
+    borderColor: "#238B52",
     alignItems: "center",
     justifyContent: "center",
+    position: "relative",
   },
   fabPressed: {
-    backgroundColor: AiColors.brandPressed,
+    backgroundColor: "#114F2F",
+    transform: [{ scale: 0.96 }],
+  },
+  aiTag: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: "#1EA858",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: "#FFFFFF",
+  },
+  aiTagText: {
+    color: "#FFFFFF",
+    fontSize: 9,
+    fontWeight: "900",
+    letterSpacing: 0.4,
   },
 });

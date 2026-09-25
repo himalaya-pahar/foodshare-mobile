@@ -101,6 +101,11 @@ function AiChatBubbleImpl({ message, onRetry }: AiChatBubbleProps) {
         isUser ? styles.rowUser : styles.rowAssistant,
       ]}
     >
+      {!isUser ? (
+        <View style={styles.assistantAvatar}>
+          <Ionicons name="sparkles" size={12} color="#16673E" />
+        </View>
+      ) : null}
       <View
         style={[
           styles.bubble,
@@ -209,7 +214,7 @@ export const AiChatBubble = memo(AiChatBubbleImpl);
 
 const styles = StyleSheet.create({
   row: {
-    marginVertical: AiSpacing.one,
+    marginVertical: 6,
     paddingHorizontal: AiSpacing.three,
     maxWidth: "100%",
   },
@@ -217,26 +222,51 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   rowAssistant: {
+    flexDirection: "row",
     alignItems: "flex-start",
+    gap: 8,
+  },
+  assistantAvatar: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    backgroundColor: "#E2F2E7",
+    borderWidth: 1,
+    borderColor: "#C4E2D0",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
   },
   bubble: {
-    maxWidth: "80%",
-    borderRadius: AiRadius.bubble,
-    paddingHorizontal: AiSpacing.three,
-    paddingVertical: AiSpacing.two + 2,
+    maxWidth: "84%",
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   bubbleUser: {
-    backgroundColor: AiColors.brandSoft,
-    borderTopRightRadius: 4,
+    backgroundColor: "#16673E",
+    borderWidth: 1,
+    borderColor: "#1E8250",
+    borderBottomRightRadius: 4,
+    shadowColor: "#0F4628",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 2,
   },
   bubbleAssistant: {
-    backgroundColor: AiColors.sheetBg,
-    borderWidth: 1,
-    borderColor: AiColors.border,
-    borderTopLeftRadius: 4,
+    backgroundColor: "#FAFDFB",
+    borderWidth: 1.2,
+    borderColor: "#D8E5DC",
+    borderBottomLeftRadius: 4,
+    shadowColor: "#0B2B18",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 1,
   },
   bubbleSoft: {
-    backgroundColor: AiColors.softBubble,
+    backgroundColor: "#EDF3EF",
   },
   bubbleFailed: {
     backgroundColor: AiColors.errorSoft,
@@ -245,13 +275,14 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 15,
-    lineHeight: 21,
+    lineHeight: 22,
   },
   textUser: {
-    color: AiColors.text,
+    color: "#FFFFFF",
+    fontWeight: "500",
   },
   textAssistant: {
-    color: AiColors.text,
+    color: "#15281D",
   },
   paragraphText: {
     marginBottom: AiSpacing.two,

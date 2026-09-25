@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import BrandHeader from "@/components/brand-header";
 import PasswordVisibilityToggle from "@/components/password-visibility-toggle";
 import { resendVerificationEmail, signup } from "@/services/auth";
 import type { SignupRequest } from "@/types/auth";
@@ -250,7 +251,7 @@ export default function SignupScreen({ onBack }: SignupScreenProps) {
         >
           <View style={styles.form}>
             <View style={styles.brandRow}>
-              <Text style={styles.brand}>FoodShare</Text>
+              <BrandHeader size="large" showBadge={false} />
             </View>
 
             {!verificationSentEmail && !success ? (
@@ -628,9 +629,9 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   input: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FAFDFB",
     borderWidth: 1.5,
-    borderColor: "#D6E2D9",
+    borderColor: "#D2DFD6",
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 15,
@@ -652,12 +653,12 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 52,
     padding: 12,
-    borderWidth: 2,
-    borderColor: "#D6E2D9",
+    borderWidth: 1.5,
+    borderColor: "#D2DFD6",
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FAFDFB",
   },
   roleSelected: {
     borderColor: "#176B43",
@@ -687,14 +688,16 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   button: {
-    backgroundColor: "#176B43",
+    backgroundColor: "#16673E",
+    borderWidth: 1,
+    borderColor: "#1E8250",
     borderRadius: 16,
     minHeight: 56,
     padding: 16,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#0D3B22",
-    shadowOpacity: 0.18,
+    shadowOpacity: 0.22,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 5 },
     elevation: 4,
@@ -732,10 +735,12 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   verificationCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FAFDFB",
     borderRadius: 24,
     padding: 24,
     alignItems: "center",
+    borderWidth: 1.2,
+    borderColor: "#DCE7E0",
     shadowColor: "#0D3B22",
     shadowOpacity: 0.06,
     shadowRadius: 16,
@@ -762,7 +767,9 @@ const styles = StyleSheet.create({
   },
   spamNoticeBox: {
     borderRadius: 12,
-    backgroundColor: "#F4F7F4",
+    backgroundColor: "#EFF5F1",
+    borderWidth: 1,
+    borderColor: "#D6E4DB",
     paddingHorizontal: 14,
     paddingVertical: 10,
     marginBottom: 16,
@@ -808,8 +815,8 @@ const styles = StyleSheet.create({
     minHeight: 52,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: "#176B43",
-    backgroundColor: "#FFFFFF",
+    borderColor: "#16673E",
+    backgroundColor: "#FAFDFB",
     alignItems: "center",
     justifyContent: "center",
     padding: 14,

@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import BrandHeader from "@/components/brand-header";
 import PasswordVisibilityToggle from "@/components/password-visibility-toggle";
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/providers/auth-provider";
@@ -136,7 +137,7 @@ export default function LoginScreen({ onSignup }: LoginScreenProps) {
         >
           <View style={styles.form}>
             <View style={styles.brandRow}>
-              <Text style={styles.brand}>FoodShare</Text>
+              <BrandHeader size="large" showBadge={false} />
             </View>
 
             <View style={styles.header}>
@@ -365,9 +366,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   input: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FAFDFB",
     borderWidth: 1.5,
-    borderColor: "#D6E2D9",
+    borderColor: "#D2DFD6",
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 15,
@@ -397,14 +398,16 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   button: {
-    backgroundColor: "#176B43",
+    backgroundColor: "#16673E",
+    borderWidth: 1,
+    borderColor: "#1E8250",
     borderRadius: 16,
     minHeight: 56,
     padding: 16,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#0D3B22",
-    shadowOpacity: 0.18,
+    shadowOpacity: 0.22,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 5 },
     elevation: 4,
@@ -466,7 +469,7 @@ const styles = StyleSheet.create({
   },
   inlineResendButton: {
     alignSelf: "flex-start",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FAFDFB",
     borderWidth: 1.5,
     borderColor: "#176B43",
     borderRadius: 10,

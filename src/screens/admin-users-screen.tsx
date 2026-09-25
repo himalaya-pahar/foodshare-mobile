@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import BrandHeader from "@/components/brand-header";
 import { useAuth } from "@/providers/auth-provider";
 import PaginationControls from "@/components/pagination-controls";
 import { formatBangladeshDate } from "@/lib/datetime";
@@ -422,9 +423,7 @@ export default function AdminUsersScreen() {
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.brandRow}>
-          <Text style={styles.brand}>FoodShare</Text>
-        </View>
+        <BrandHeader tagline="Community Verification & Governance" />
 
         <View style={styles.header}>
           <View style={styles.headerBadge}>
@@ -646,7 +645,9 @@ const styles = StyleSheet.create({
     gap: 10,
     borderRadius: 16,
     paddingHorizontal: 16,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FAFDFB",
+    borderWidth: 1.2,
+    borderColor: "#DCE6DF",
     shadowColor: "#173526",
     shadowOpacity: 0.04,
     shadowRadius: 10,
@@ -669,15 +670,15 @@ const styles = StyleSheet.create({
   },
   listTitle: { color: "#173526", fontSize: 22, fontWeight: "800", letterSpacing: -0.4 },
   rangeText: { color: "#75867C", fontSize: 14, marginTop: 4 },
-  refreshText: { color: "#176B43", fontSize: 14, fontWeight: "800" },
+  refreshText: { color: "#16673E", fontSize: 14, fontWeight: "800" },
   userRow: {
     flexDirection: "row",
     gap: 14,
-    borderRadius: 20,
+    borderRadius: 22,
     padding: 18,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E5EBE7",
+    backgroundColor: "#FAFDFB",
+    borderWidth: 1.2,
+    borderColor: "#DCE6DF",
     shadowColor: "#173526",
     shadowOpacity: 0.04,
     shadowRadius: 10,
@@ -734,7 +735,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    backgroundColor: "#176B43",
+    backgroundColor: "#16673E",
+    borderWidth: 1,
+    borderColor: "#1E8250",
   },
   approveButtonDisabled: {
     backgroundColor: "#D7E3DC",
