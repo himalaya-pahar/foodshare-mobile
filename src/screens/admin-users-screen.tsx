@@ -5,6 +5,7 @@ import {
   Alert,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -421,6 +422,13 @@ export default function AdminUsersScreen() {
       <ScrollView
         contentContainerStyle={styles.container}
         contentInsetAdjustmentBehavior="automatic"
+        refreshControl={
+          <RefreshControl
+            refreshing={loading && Boolean(page)}
+            onRefresh={() => setReloadKey((value) => value + 1)}
+            tintColor="#16673E"
+          />
+        }
         showsVerticalScrollIndicator={false}
       >
         <BrandHeader />
@@ -500,12 +508,20 @@ export default function AdminUsersScreen() {
 
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel="Refresh accounts"
             disabled={loading}
             onPress={() => setReloadKey((value) => value + 1)}
+            style={({ pressed }) => [
+              styles.refreshButton,
+              pressed && !loading && styles.refreshButtonPressed,
+              loading && styles.refreshButtonDisabled,
+            ]}
           >
-            <Text style={styles.refreshText}>
-              {loading ? "Loading…" : "Refresh"}
-            </Text>
+            {loading ? (
+              <ActivityIndicator size="small" color="#16673E" />
+            ) : (
+              <Text style={styles.refreshText}>Refresh</Text>
+            )}
           </Pressable>
         </View>
 
@@ -629,7 +645,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   tabButtonActive: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FAFDFB",
+    borderWidth: 1,
+    borderColor: "#DCE7E0",
     shadowColor: "#173526",
     shadowOpacity: 0.06,
     shadowRadius: 8,
@@ -670,7 +688,26 @@ const styles = StyleSheet.create({
   },
   listTitle: { color: "#173526", fontSize: 22, fontWeight: "800", letterSpacing: -0.4 },
   rangeText: { color: "#75867C", fontSize: 14, marginTop: 4 },
-  refreshText: { color: "#16673E", fontSize: 14, fontWeight: "800" },
+  refreshButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    backgroundColor: "#EAF5EE",
+    borderWidth: 1,
+    borderColor: "#BEDECB",
+    minHeight: 38,
+  },
+  refreshButtonPressed: {
+    opacity: 0.75,
+    transform: [{ scale: 0.97 }],
+  },
+  refreshButtonDisabled: {
+    opacity: 0.65,
+  },
+  refreshText: { color: "#16673E", fontSize: 13, fontWeight: "800" },
   userRow: {
     flexDirection: "row",
     gap: 14,
