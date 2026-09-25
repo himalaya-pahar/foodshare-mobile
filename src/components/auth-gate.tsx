@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Redirect } from "expo-router";
 import {
   ActivityIndicator,
@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/providers/auth-provider";
 import LoginScreen from "@/screens/login-screen";
 import SignupScreen from "@/screens/signup-screen";
+import { resendVerificationEmail } from "@/services/auth";
 
 export default function AuthGate() {
   const {
@@ -26,8 +27,50 @@ export default function AuthGate() {
 
   const [showSignup, setShowSignup] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resending, setResending] = useState(false);
+  const [resendStatus, setResendStatus] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   const actionRunning = useRef(false);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  async function handleResendEmail() {
+    if (!user?.email || resending || resendCooldown > 0 || busy) return;
+
+    setResending(true);
+    setResendStatus(null);
+
+    try {
+      const res = await resendVerificationEmail(user.email);
+      setResendStatus({
+        type: "success",
+        text: res.message || "A new verification email has been sent.",
+      });
+      setResendCooldown(60);
+    } catch (err) {
+      setResendStatus({
+        type: "error",
+        text:
+          err instanceof Error
+            ? err.message
+            : "Could not resend verification email. Please try again.",
+      });
+    } finally {
+      setResending(false);
+    }
+  }
 
   async function handleAction(action: () => Promise<void>) {
     if (busy || actionRunning.current) return;
@@ -79,29 +122,49 @@ export default function AuthGate() {
     );
   }
 
-  if (
-    status === "signedIn" &&
-    user?.approval_status === "APPROVED"
-  ) {
+  const isUserActive =
+    user?.status === "active" ||
+    (!user?.status && user?.approval_status === "APPROVED");
+
+  if (status === "signedIn" && isUserActive) {
     return <Redirect href="/" />;
   }
 
   let title = "Account unavailable";
   let message =
     "We could not confirm your account status. Refresh or log out.";
+  let stage:
+    | "restoreError"
+    | "pending_email"
+    | "pending_admin"
+    | "rejected"
+    | "unknown" = "unknown";
 
   if (status === "restoreError") {
+    stage = "restoreError";
     title = "Could not restore your session";
     message =
       sessionError ?? "Please check your connection and try again.";
-  } else if (user?.approval_status === "PENDING") {
-    title = "Waiting for approval";
+  } else if (user?.status === "pending_email") {
+    stage = "pending_email";
+    title = "Verify Your Email";
+    message = `Please check your inbox at ${user.email} and tap the verification link to activate your account.`;
+  } else if (
+    user?.status === "pending_admin" ||
+    user?.approval_status === "PENDING"
+  ) {
+    stage = "pending_admin";
+    title = "Email Verified! Awaiting Admin Review";
     message =
-      "Your account needs administrator approval. Refresh your status after approval.";
-  } else if (user?.approval_status === "REJECTED") {
-    title = "Account not approved";
+      "Your email is verified. An administrator is currently reviewing your account details. You will be able to access FoodShare once approved.";
+  } else if (
+    user?.status === "rejected" ||
+    user?.approval_status === "REJECTED"
+  ) {
+    stage = "rejected";
+    title = "Account Not Approved";
     message =
-      "Your registration was rejected. Please contact the FoodShare administrator.";
+      "Your registration was reviewed and rejected by an administrator. Please contact support for more details.";
   }
 
   return (
@@ -127,23 +190,85 @@ export default function AuthGate() {
             </View>
           ) : null}
 
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ disabled: busy, busy }}
-            disabled={busy}
-            onPress={() => void handleAction(retryRestore)}
-            style={({ pressed }) => [
-              styles.button,
-              pressed && !busy && styles.buttonPressed,
-              busy && styles.dimmed,
-            ]}
-          >
-            <Text style={styles.buttonText}>
-              {status === "restoreError"
-                ? "Try again"
-                : "Refresh status"}
-            </Text>
-          </Pressable>
+          {resendStatus ? (
+            <View
+              style={[
+                styles.resendStatusBox,
+                resendStatus.type === "success"
+                  ? styles.resendStatusSuccess
+                  : styles.resendStatusError,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.resendStatusText,
+                  resendStatus.type === "success"
+                    ? styles.resendStatusTextSuccess
+                    : styles.resendStatusTextError,
+                ]}
+                accessibilityRole="alert"
+              >
+                {resendStatus.text}
+              </Text>
+            </View>
+          ) : null}
+
+          {stage === "pending_email" ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Resend Verification Email"
+              accessibilityState={{
+                disabled: resendCooldown > 0 || resending || busy,
+                busy: resending,
+              }}
+              disabled={resendCooldown > 0 || resending || busy}
+              onPress={() => void handleResendEmail()}
+              style={({ pressed }) => [
+                styles.resendButton,
+                pressed &&
+                  resendCooldown === 0 &&
+                  !resending &&
+                  styles.buttonPressed,
+                (resendCooldown > 0 || resending || busy) &&
+                  styles.resendButtonDisabled,
+              ]}
+            >
+              {resending ? (
+                <ActivityIndicator color="#176B43" />
+              ) : (
+                <Text
+                  style={[
+                    styles.resendButtonText,
+                    resendCooldown > 0 && styles.resendButtonTextDisabled,
+                  ]}
+                >
+                  {resendCooldown > 0
+                    ? `Resend in ${resendCooldown}s`
+                    : "Resend Verification Email"}
+                </Text>
+              )}
+            </Pressable>
+          ) : null}
+
+          {stage !== "rejected" ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: busy, busy }}
+              disabled={busy}
+              onPress={() => void handleAction(retryRestore)}
+              style={({ pressed }) => [
+                styles.button,
+                pressed && !busy && styles.buttonPressed,
+                busy && styles.dimmed,
+              ]}
+            >
+              <Text style={styles.buttonText}>
+                {stage === "restoreError"
+                  ? "Try again"
+                  : "Refresh status"}
+              </Text>
+            </Pressable>
+          ) : null}
 
           <Pressable
             accessibilityRole="button"
@@ -151,12 +276,23 @@ export default function AuthGate() {
             disabled={busy}
             onPress={() => void handleAction(signOut)}
             style={({ pressed }) => [
-              styles.logoutButton,
-              pressed && styles.logoutPressed,
+              stage === "rejected" ? styles.button : styles.logoutButton,
+              pressed &&
+                (stage === "rejected"
+                  ? styles.buttonPressed
+                  : styles.logoutPressed),
               busy && styles.dimmed,
             ]}
           >
-            <Text style={styles.logoutText}>Log out</Text>
+            <Text
+              style={
+                stage === "rejected"
+                  ? styles.buttonText
+                  : styles.logoutText
+              }
+            >
+              Log out
+            </Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -290,5 +426,54 @@ const styles = StyleSheet.create({
   },
   dimmed: {
     opacity: 0.6,
+  },
+  resendStatusBox: {
+    width: "100%",
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+  },
+  resendStatusSuccess: {
+    backgroundColor: "#E8F5E9",
+  },
+  resendStatusError: {
+    backgroundColor: "#FFF0EE",
+  },
+  resendStatusText: {
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: "center",
+  },
+  resendStatusTextSuccess: {
+    color: "#176B43",
+    fontWeight: "700",
+  },
+  resendStatusTextError: {
+    color: "#B42318",
+  },
+  resendButton: {
+    width: "100%",
+    minHeight: 52,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: "#176B43",
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 14,
+    marginBottom: 12,
+  },
+  resendButtonDisabled: {
+    borderColor: "#D6E2D9",
+    backgroundColor: "#F7FAF8",
+  },
+  resendButtonText: {
+    color: "#176B43",
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  resendButtonTextDisabled: {
+    color: "#84968C",
+    fontWeight: "600",
   },
 });

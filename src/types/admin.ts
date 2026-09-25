@@ -1,4 +1,4 @@
-import type { ApprovalStatus, UserRole } from "@/types/auth";
+import type { ApprovalStatus, UserRole, UserStatus } from "@/types/auth";
 
 export type ApprovalDecision = "APPROVED" | "REJECTED";
 
@@ -12,7 +12,9 @@ export interface AdminUser {
   organization_name: string | null;
   email: string;
   role: UserRole;
-  approval_status: ApprovalStatus;
+  status: UserStatus;
+  email_verified: boolean;
+  approval_status?: ApprovalStatus;
   created_at: string;
 }
 

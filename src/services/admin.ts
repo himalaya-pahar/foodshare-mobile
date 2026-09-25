@@ -48,6 +48,18 @@ export function getAdminStats(): Promise<AdminStats> {
   return apiRequest<AdminStats>("/admin/stats");
 }
 
+export function approveAdminUser(userId: number): Promise<AdminUser> {
+  return apiRequest<AdminUser>(`/admin/users/${userId}/approve`, {
+    method: "PATCH",
+  });
+}
+
+export function rejectAdminUser(userId: number): Promise<AdminUser> {
+  return apiRequest<AdminUser>(`/admin/users/${userId}/reject`, {
+    method: "PATCH",
+  });
+}
+
 export function updateUserApproval(
   userId: number,
   decision: ApprovalDecision,

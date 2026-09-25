@@ -35,7 +35,11 @@ export function AiAssistant() {
     setOpen(false);
   }, [chat]);
 
-  if (status !== "signedIn" || user?.approval_status !== "APPROVED") {
+  const isApproved =
+    user?.status === "active" ||
+    (!user?.status && user?.approval_status === "APPROVED");
+
+  if (status !== "signedIn" || !isApproved) {
     return null;
   }
 

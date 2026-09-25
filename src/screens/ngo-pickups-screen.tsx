@@ -74,7 +74,10 @@ function PickupRequestCard({
 
 export default function NGOPickupsScreen() {
   const { user } = useAuth();
-  const isNgo = user?.role === "NGO" && user.approval_status === "APPROVED";
+  const isApproved =
+    user?.status === "active" ||
+    (!user?.status && user?.approval_status === "APPROVED");
+  const isNgo = user?.role === "NGO" && isApproved;
   const [page, setPage] = useState<PaginatedResponse<PickupRequest> | null>(null);
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);

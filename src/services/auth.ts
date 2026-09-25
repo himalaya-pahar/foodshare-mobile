@@ -7,8 +7,10 @@ import {
 import type {
   LoginResponse,
   ProfileUpdate,
+  ResendVerificationResponse,
   SignupRequest,
   User,
+  VerifyEmailResponse,
 } from "../types/auth";
 
 export function signup(data: SignupRequest): Promise<User> {
@@ -19,6 +21,37 @@ export function signup(data: SignupRequest): Promise<User> {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Calls backend to verify user's email using the token received in the link.
+ * GET /auth/verify-email?token=<token>
+ */
+export function verifyEmail(token: string): Promise<VerifyEmailResponse> {
+  return apiRequest<VerifyEmailResponse>(
+    `/auth/verify-email?token=${encodeURIComponent(token.trim())}`,
+    {
+      method: "GET",
+      authenticated: false,
+    },
+  );
+}
+
+/**
+ * Requests a new verification email with rate limiting/cooldown.
+ * POST /auth/resend-verification
+ */
+export function resendVerificationEmail(
+  email: string,
+): Promise<ResendVerificationResponse> {
+  return apiRequest<ResendVerificationResponse>("/auth/resend-verification", {
+    method: "POST",
+    authenticated: false,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email: email.trim().toLowerCase() }),
   });
 }
 
@@ -81,7 +114,10 @@ export async function restoreSession(): Promise<User | null> {
   try {
     return await getCurrentUser();
   } catch (error) {
-    if (error instanceof ApiError && error.status === 401) {
+    if (
+      error instanceof ApiError &&
+      (error.status === 401 || error.status === 403)
+    ) {
       await deleteAccessToken();
       return null;
     }

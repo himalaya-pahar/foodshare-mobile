@@ -56,10 +56,20 @@ function displayRole(role: UserRole): string {
   return "Administrator";
 }
 
-function displayApprovalStatus(status: ApprovalStatus): string {
-  if (status === "APPROVED") return "Approved";
-  if (status === "PENDING") return "Pending approval";
-  return "Rejected";
+function displayUserStatus(user: User): string {
+  if (user.status === "active" || user.approval_status === "APPROVED") {
+    return "Approved";
+  }
+  if (user.status === "pending_email") {
+    return "Pending email verification";
+  }
+  if (user.status === "pending_admin" || user.approval_status === "PENDING") {
+    return "Pending approval";
+  }
+  if (user.status === "rejected" || user.approval_status === "REJECTED") {
+    return "Rejected";
+  }
+  return "Active";
 }
 
 function getContentType(
@@ -402,7 +412,7 @@ export default function ProfileScreen() {
             <View style={styles.statusBadge}>
               <View style={styles.statusDot} />
               <Text style={styles.statusText}>
-                {displayApprovalStatus(user.approval_status)}
+                {displayUserStatus(user)}
               </Text>
             </View>
           </View>

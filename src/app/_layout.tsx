@@ -15,7 +15,9 @@ SplashScreen.preventAutoHideAsync();
 function RootNavigator() {
   const { status, user } = useAuth();
   const hasApprovedAccount =
-    status === "signedIn" && user?.approval_status === "APPROVED";
+    status === "signedIn" &&
+    (user?.status === "active" ||
+      (!user?.status && user?.approval_status === "APPROVED"));
 
   return (
     <Stack
@@ -32,6 +34,8 @@ function RootNavigator() {
       <Stack.Protected guard={!hasApprovedAccount}>
         <Stack.Screen name="(auth)" />
       </Stack.Protected>
+
+      <Stack.Screen name="verify-email" />
     </Stack>
   );
 }

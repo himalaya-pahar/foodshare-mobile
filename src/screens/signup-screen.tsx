@@ -16,7 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import PasswordVisibilityToggle from "@/components/password-visibility-toggle";
-import { signup } from "@/services/auth";
+import { resendVerificationEmail, signup } from "@/services/auth";
 import type { SignupRequest } from "@/types/auth";
 
 type SignupScreenProps = {
@@ -98,8 +98,27 @@ export default function SignupScreen({ onBack }: SignupScreenProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [verificationSentEmail, setVerificationSentEmail] = useState<
+    string | null
+  >(null);
+  const [resendCooldown, setResendCooldown] = useState(60);
+  const [resending, setResending] = useState(false);
+  const [resendStatus, setResendStatus] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   const submitting = useRef(false);
+
+  useEffect(() => {
+    if (!verificationSentEmail || resendCooldown <= 0) return;
+
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [verificationSentEmail, resendCooldown]);
 
   useEffect(() => {
     if (Platform.OS !== "android") return;
@@ -118,8 +137,36 @@ export default function SignupScreen({ onBack }: SignupScreenProps) {
     return () => subscription.remove();
   }, [onBack]);
 
+  async function handleResend() {
+    if (!verificationSentEmail || resending || resendCooldown > 0) return;
+
+    setResending(true);
+    setResendStatus(null);
+
+    try {
+      const result = await resendVerificationEmail(verificationSentEmail);
+      setResendStatus({
+        type: "success",
+        text:
+          result.message ||
+          "A new verification link has been sent to your email.",
+      });
+      setResendCooldown(60);
+    } catch (err) {
+      setResendStatus({
+        type: "error",
+        text:
+          err instanceof Error
+            ? err.message
+            : "Could not resend verification email. Please try again.",
+      });
+    } finally {
+      setResending(false);
+    }
+  }
+
   async function handleSignup() {
-    if (submitting.current || success) return;
+    if (submitting.current || success || verificationSentEmail) return;
 
     setError(null);
 
@@ -166,16 +213,11 @@ export default function SignupScreen({ onBack }: SignupScreenProps) {
       setPassword("");
       setConfirmPassword("");
 
-      if (user.approval_status === "APPROVED") {
+      if (user.status === "active" || user.approval_status === "APPROVED") {
         setSuccess("Your account is approved. You can now log in.");
-      } else if (user.approval_status === "REJECTED") {
-        setSuccess(
-          "Your account was created but is not approved. Please contact the FoodShare administrator.",
-        );
       } else {
-        setSuccess(
-          "Your account was created successfully. An administrator must approve it before you can use FoodShare.",
-        );
+        setVerificationSentEmail(normalizedEmail);
+        setResendCooldown(60);
       }
     } catch (error) {
       setError(
@@ -219,19 +261,117 @@ export default function SignupScreen({ onBack }: SignupScreenProps) {
               </Text>
             </View>
 
-            <Text style={styles.title}>
-              {success ? "Account created" : "Create an account"}
-            </Text>
+            {verificationSentEmail ? (
+              <View style={styles.verificationCard}>
+                <View style={styles.verifyIconWrapper}>
+                  <Text style={styles.verifyIcon}>✉</Text>
+                </View>
 
-            {success ? (
-              <Text
-                style={styles.message}
-                accessibilityLiveRegion="polite"
-              >
-                {success}
-              </Text>
+                <Text style={styles.title}>Verify Your Email</Text>
+                <Text style={styles.message}>
+                  We've sent a verification link to{" "}
+                  <Text style={styles.emailHighlight}>
+                    {verificationSentEmail}
+                  </Text>
+                  . Please click the link in your inbox to continue.
+                </Text>
+
+                {resendStatus ? (
+                  <View
+                    style={[
+                      styles.resendStatusBox,
+                      resendStatus.type === "success"
+                        ? styles.resendStatusSuccess
+                        : styles.resendStatusError,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.resendStatusText,
+                        resendStatus.type === "success"
+                          ? styles.resendStatusTextSuccess
+                          : styles.resendStatusTextError,
+                      ]}
+                      accessibilityRole="alert"
+                    >
+                      {resendStatus.text}
+                    </Text>
+                  </View>
+                ) : null}
+
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Resend Verification Email"
+                  accessibilityState={{
+                    disabled: resendCooldown > 0 || resending,
+                    busy: resending,
+                  }}
+                  disabled={resendCooldown > 0 || resending}
+                  onPress={() => void handleResend()}
+                  style={({ pressed }) => [
+                    styles.resendButton,
+                    pressed &&
+                      resendCooldown === 0 &&
+                      !resending &&
+                      styles.buttonPressed,
+                    (resendCooldown > 0 || resending) &&
+                      styles.resendButtonDisabled,
+                  ]}
+                >
+                  {resending ? (
+                    <ActivityIndicator color="#176B43" />
+                  ) : (
+                    <Text
+                      style={[
+                        styles.resendButtonText,
+                        resendCooldown > 0 && styles.resendButtonTextDisabled,
+                      ]}
+                    >
+                      {resendCooldown > 0
+                        ? `Resend in ${resendCooldown}s`
+                        : "Resend Verification Email"}
+                    </Text>
+                  )}
+                </Pressable>
+
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Back to Login"
+                  onPress={goBack}
+                  style={({ pressed }) => [
+                    styles.button,
+                    styles.fullWidthButton,
+                    pressed && styles.buttonPressed,
+                  ]}
+                >
+                  <Text style={styles.buttonText}>Back to Login</Text>
+                </Pressable>
+              </View>
+            ) : success ? (
+              <View style={styles.verificationCard}>
+                <Text style={styles.title}>Account created</Text>
+                <Text
+                  style={styles.message}
+                  accessibilityLiveRegion="polite"
+                >
+                  {success}
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Back to Login"
+                  onPress={goBack}
+                  style={({ pressed }) => [
+                    styles.button,
+                    styles.fullWidthButton,
+                    pressed && styles.buttonPressed,
+                  ]}
+                >
+                  <Text style={styles.buttonText}>Back to Login</Text>
+                </Pressable>
+              </View>
             ) : (
               <>
+                <Text style={styles.title}>Create an account</Text>
                 <Text style={styles.message}>
                   Join as a restaurant or NGO to help share surplus food.
                 </Text>
@@ -375,27 +515,25 @@ export default function SignupScreen({ onBack }: SignupScreenProps) {
                     </Text>
                   )}
                 </Pressable>
+
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: busy }}
+                  disabled={busy}
+                  onPress={goBack}
+                  style={({ pressed }) => [
+                    styles.backButton,
+                    pressed && styles.backPressed,
+                    busy && styles.dimmed,
+                  ]}
+                >
+                  <Text style={styles.backText}>
+                    Already have an account?{" "}
+                    <Text style={styles.backBold}>Log in</Text>
+                  </Text>
+                </Pressable>
               </>
             )}
-
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ disabled: busy }}
-              disabled={busy}
-              onPress={goBack}
-              style={({ pressed }) => [
-                styles.backButton,
-                pressed && styles.backPressed,
-                busy && styles.dimmed,
-              ]}
-            >
-              <Text style={styles.backText}>
-                {success
-                  ? "Back to login"
-                  : "Already have an account? "}
-                {!success ? <Text style={styles.backBold}>Log in</Text> : null}
-              </Text>
-            </Pressable>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -580,6 +718,87 @@ const styles = StyleSheet.create({
   },
   dimmed: {
     opacity: 0.6,
+  },
+  verificationCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    padding: 24,
+    alignItems: "center",
+    shadowColor: "#0D3B22",
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+    marginBottom: 16,
+  },
+  verifyIconWrapper: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: "#E4F7EC",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  },
+  verifyIcon: {
+    fontSize: 28,
+    color: "#176B43",
+  },
+  emailHighlight: {
+    fontWeight: "800",
+    color: "#17251B",
+  },
+  resendStatusBox: {
+    width: "100%",
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+  },
+  resendStatusSuccess: {
+    backgroundColor: "#E8F5E9",
+  },
+  resendStatusError: {
+    backgroundColor: "#FFF0EE",
+  },
+  resendStatusText: {
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: "center",
+  },
+  resendStatusTextSuccess: {
+    color: "#176B43",
+    fontWeight: "700",
+  },
+  resendStatusTextError: {
+    color: "#B42318",
+  },
+  resendButton: {
+    width: "100%",
+    minHeight: 52,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: "#176B43",
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 14,
+    marginBottom: 12,
+  },
+  resendButtonDisabled: {
+    borderColor: "#D6E2D9",
+    backgroundColor: "#F7FAF8",
+  },
+  resendButtonText: {
+    color: "#176B43",
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  resendButtonTextDisabled: {
+    color: "#84968C",
+    fontWeight: "600",
+  },
+  fullWidthButton: {
+    width: "100%",
   },
 });
 

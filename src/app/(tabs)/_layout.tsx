@@ -4,11 +4,12 @@ import { useAuth } from "@/providers/auth-provider";
 
 export default function TabsLayout() {
   const { user } = useAuth();
-  const isAdmin =
-    user?.role === "ADMIN" && user.approval_status === "APPROVED";
-  const isRestaurant =
-    user?.role === "RESTAURANT" && user.approval_status === "APPROVED";
-  const isNgo = user?.role === "NGO" && user.approval_status === "APPROVED";
+  const isApproved =
+    user?.status === "active" ||
+    (!user?.status && user?.approval_status === "APPROVED");
+  const isAdmin = user?.role === "ADMIN" && isApproved;
+  const isRestaurant = user?.role === "RESTAURANT" && isApproved;
+  const isNgo = user?.role === "NGO" && isApproved;
 
   return (
     <NativeTabs

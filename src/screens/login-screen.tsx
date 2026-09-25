@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
@@ -14,7 +14,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import PasswordVisibilityToggle from "@/components/password-visibility-toggle";
+import { ApiError } from "@/lib/api";
 import { useAuth } from "@/providers/auth-provider";
+import { resendVerificationEmail } from "@/services/auth";
 
 type LoginScreenProps = {
   onSignup: () => void;
@@ -28,15 +30,61 @@ export default function LoginScreen({ onSignup }: LoginScreenProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resending, setResending] = useState(false);
+  const [resendStatus, setResendStatus] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
   const submitting = useRef(false);
   const passwordInput = useRef<TextInput>(null);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  async function handleResend() {
+    if (!unverifiedEmail || resending || resendCooldown > 0) return;
+
+    setResending(true);
+    setResendStatus(null);
+
+    try {
+      const res = await resendVerificationEmail(unverifiedEmail);
+      setResendStatus({
+        type: "success",
+        text: res.message || "A new verification email has been sent.",
+      });
+      setResendCooldown(60);
+    } catch (err) {
+      setResendStatus({
+        type: "error",
+        text:
+          err instanceof Error
+            ? err.message
+            : "Could not resend verification email. Please try again.",
+      });
+    } finally {
+      setResending(false);
+    }
+  }
 
   async function handleLogin() {
     if (busy || submitting.current) return;
 
     setError(null);
+    setUnverifiedEmail(null);
+    setResendStatus(null);
 
-    if (!email.trim() || !password) {
+    const trimmedEmail = email.trim().toLowerCase();
+
+    if (!trimmedEmail || !password) {
       setError("Please enter your email and password.");
       return;
     }
@@ -45,14 +93,25 @@ export default function LoginScreen({ onSignup }: LoginScreenProps) {
     Keyboard.dismiss();
 
     try {
-      await signIn(email.trim(), password);
+      await signIn(trimmedEmail, password);
       // Navigation will respond to the updated authentication state.
-    } catch (error) {
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Unable to log in. Please try again.",
-      );
+    } catch (loginError) {
+      const errorMessage =
+        loginError instanceof Error
+          ? loginError.message
+          : "Unable to log in. Please try again.";
+
+      const isUnverified =
+        (loginError instanceof ApiError &&
+          (loginError.status === 403 ||
+            /not verified|verification|verify/i.test(errorMessage))) ||
+        /not verified|verification|verify your email/i.test(errorMessage);
+
+      if (isUnverified) {
+        setUnverifiedEmail(trimmedEmail);
+      }
+
+      setError(errorMessage);
     } finally {
       submitting.current = false;
     }
@@ -137,6 +196,60 @@ export default function LoginScreen({ onSignup }: LoginScreenProps) {
                 >
                   {error}
                 </Text>
+
+                {unverifiedEmail ? (
+                  <View style={styles.unverifiedActionBox}>
+                    {resendStatus ? (
+                      <Text
+                        style={[
+                          styles.unverifiedFeedback,
+                          resendStatus.type === "success"
+                            ? styles.unverifiedSuccessText
+                            : styles.unverifiedErrorText,
+                        ]}
+                        accessibilityRole="alert"
+                      >
+                        {resendStatus.text}
+                      </Text>
+                    ) : null}
+
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Resend Verification Link"
+                      accessibilityState={{
+                        disabled: resendCooldown > 0 || resending || busy,
+                        busy: resending,
+                      }}
+                      disabled={resendCooldown > 0 || resending || busy}
+                      onPress={() => void handleResend()}
+                      style={({ pressed }) => [
+                        styles.inlineResendButton,
+                        pressed &&
+                          resendCooldown === 0 &&
+                          !resending &&
+                          styles.buttonPressed,
+                        (resendCooldown > 0 || resending || busy) &&
+                          styles.inlineResendButtonDisabled,
+                      ]}
+                    >
+                      {resending ? (
+                        <ActivityIndicator size="small" color="#176B43" />
+                      ) : (
+                        <Text
+                          style={[
+                            styles.inlineResendButtonText,
+                            resendCooldown > 0 &&
+                              styles.inlineResendButtonTextDisabled,
+                          ]}
+                        >
+                          {resendCooldown > 0
+                            ? `Resend in ${resendCooldown}s`
+                            : "Resend Verification Link"}
+                        </Text>
+                      )}
+                    </Pressable>
+                  </View>
+                ) : null}
               </View>
             ) : null}
 
@@ -327,5 +440,48 @@ const styles = StyleSheet.create({
   signupBold: {
     color: "#176B43",
     fontWeight: "800",
+  },
+  unverifiedActionBox: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(180, 35, 24, 0.15)",
+    gap: 8,
+  },
+  unverifiedFeedback: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  unverifiedSuccessText: {
+    color: "#176B43",
+    fontWeight: "700",
+  },
+  unverifiedErrorText: {
+    color: "#B42318",
+  },
+  inlineResendButton: {
+    alignSelf: "flex-start",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1.5,
+    borderColor: "#176B43",
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    minHeight: 38,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  inlineResendButtonDisabled: {
+    borderColor: "#D6E2D9",
+    backgroundColor: "#F7FAF8",
+  },
+  inlineResendButtonText: {
+    color: "#176B43",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  inlineResendButtonTextDisabled: {
+    color: "#84968C",
+    fontWeight: "600",
   },
 });

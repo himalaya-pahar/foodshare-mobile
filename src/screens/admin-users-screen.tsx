@@ -16,9 +16,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/providers/auth-provider";
 import { formatBangladeshDate } from "@/lib/datetime";
 import {
+  approveAdminUser,
   deleteAdminUser,
   getAdminUsers,
   getPendingUsers,
+  rejectAdminUser,
   updateUserApproval,
 } from "@/services/admin";
 import type { AdminUser, ApprovalDecision } from "@/types/admin";
@@ -38,6 +40,76 @@ function formatJoinedDate(createdAt: string): string {
   return `Joined ${formatBangladeshDate(createdAt)}`;
 }
 
+function getStatusBadgeConfig(item: AdminUser): {
+  label: string;
+  badgeStyle: object;
+  textStyle: object;
+  isPendingEmail: boolean;
+  isPendingReview: boolean;
+} {
+  const status = item.status;
+
+  if (status === "pending_email") {
+    return {
+      label: "Pending Email",
+      badgeStyle: styles.pendingEmailBadge,
+      textStyle: styles.pendingEmailText,
+      isPendingEmail: true,
+      isPendingReview: true,
+    };
+  }
+
+  if (status === "pending_admin") {
+    return {
+      label: "Pending Admin",
+      badgeStyle: styles.pendingBadge,
+      textStyle: styles.pendingText,
+      isPendingEmail: false,
+      isPendingReview: true,
+    };
+  }
+
+  if (status === "active") {
+    return {
+      label: "Active",
+      badgeStyle: styles.approvedBadge,
+      textStyle: styles.approvedText,
+      isPendingEmail: false,
+      isPendingReview: false,
+    };
+  }
+
+  if (status === "rejected") {
+    return {
+      label: "Rejected",
+      badgeStyle: styles.rejectedBadge,
+      textStyle: styles.rejectedText,
+      isPendingEmail: false,
+      isPendingReview: false,
+    };
+  }
+
+  // Fallback to approval_status
+  const isPending = item.approval_status === "PENDING";
+  const isApproved = item.approval_status === "APPROVED";
+
+  return {
+    label: item.approval_status || "Pending",
+    badgeStyle: isPending
+      ? styles.pendingBadge
+      : isApproved
+        ? styles.approvedBadge
+        : styles.rejectedBadge,
+    textStyle: isPending
+      ? styles.pendingText
+      : isApproved
+        ? styles.approvedText
+        : styles.rejectedText,
+    isPendingEmail: false,
+    isPendingReview: isPending,
+  };
+}
+
 function UserRow({
   item,
   currentAdminId,
@@ -52,8 +124,7 @@ function UserRow({
   onDelete: (user: AdminUser) => void;
 }) {
   const initial = item.full_name.trim().charAt(0).toUpperCase() || "U";
-  const isPending = item.approval_status === "PENDING";
-  const isApproved = item.approval_status === "APPROVED";
+  const statusConfig = getStatusBadgeConfig(item);
 
   return (
     <View style={styles.userRow}>
@@ -67,23 +138,9 @@ function UserRow({
             {item.full_name}
           </Text>
 
-          <View
-            style={[
-              styles.statusBadge,
-              isPending && styles.pendingBadge,
-              isApproved && styles.approvedBadge,
-              !isPending && !isApproved && styles.rejectedBadge,
-            ]}
-          >
-            <Text
-              style={[
-                styles.statusText,
-                isPending && styles.pendingText,
-                isApproved && styles.approvedText,
-                !isPending && !isApproved && styles.rejectedText,
-              ]}
-            >
-              {item.approval_status}
+          <View style={[styles.statusBadge, statusConfig.badgeStyle]}>
+            <Text style={[styles.statusText, statusConfig.textStyle]}>
+              {statusConfig.label}
             </Text>
           </View>
         </View>
@@ -99,7 +156,7 @@ function UserRow({
         </Text>
 
         <View style={styles.actions}>
-          {isPending ? (
+          {statusConfig.isPendingReview ? (
             <>
               <Pressable
                 accessibilityRole="button"
@@ -116,16 +173,33 @@ function UserRow({
 
               <Pressable
                 accessibilityRole="button"
-                disabled={disabled}
+                disabled={disabled || statusConfig.isPendingEmail}
                 onPress={() => onApproval(item, "APPROVED")}
                 style={({ pressed }) => [
                   styles.approveButton,
-                  pressed && !disabled && styles.buttonPressed,
-                  disabled && styles.buttonDisabled,
+                  statusConfig.isPendingEmail && styles.approveButtonDisabled,
+                  pressed &&
+                    !disabled &&
+                    !statusConfig.isPendingEmail &&
+                    styles.buttonPressed,
+                  (disabled || statusConfig.isPendingEmail) &&
+                    styles.buttonDisabled,
                 ]}
               >
-                <Text style={styles.approveButtonText}>Approve</Text>
+                <Text
+                  style={[
+                    styles.approveButtonText,
+                    statusConfig.isPendingEmail &&
+                      styles.approveButtonTextDisabled,
+                  ]}
+                >
+                  Approve
+                </Text>
               </Pressable>
+
+              {statusConfig.isPendingEmail ? (
+                <Text style={styles.unverifiedNote}>Email not verified yet</Text>
+              ) : null}
             </>
           ) : null}
 
@@ -153,9 +227,10 @@ function UserRow({
 
 export default function AdminUsersScreen() {
   const { user } = useAuth();
-  const isAdmin =
-    user?.role === "ADMIN" &&
-    user.approval_status === "APPROVED";
+  const isUserApproved =
+    user?.status === "active" ||
+    (!user?.status && user?.approval_status === "APPROVED");
+  const isAdmin = user?.role === "ADMIN" && isUserApproved;
 
   const [mode, setMode] = useState<ListMode>("pending");
   const [searchInput, setSearchInput] = useState("");
@@ -261,7 +336,11 @@ export default function AdminUsersScreen() {
     setBusyUserId(targetUser.id);
 
     try {
-      await updateUserApproval(targetUser.id, decision);
+      if (decision === "APPROVED") {
+        await approveAdminUser(targetUser.id);
+      } else {
+        await rejectAdminUser(targetUser.id);
+      }
       setReloadKey((value) => value + 1);
     } catch (requestError) {
       Alert.alert(
@@ -648,10 +727,16 @@ const styles = StyleSheet.create({
   },
   statusBadge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
   pendingBadge: { backgroundColor: "#FFF0CE" },
+  pendingEmailBadge: {
+    backgroundColor: "#FFF4DC",
+    borderWidth: 1,
+    borderColor: "#FFE2A8",
+  },
   approvedBadge: { backgroundColor: "#DFF1E5" },
   rejectedBadge: { backgroundColor: "#FDE2DE" },
   statusText: { fontSize: 11, fontWeight: "800" },
   pendingText: { color: "#9A6500" },
+  pendingEmailText: { color: "#B56F00" },
   approvedText: { color: "#176B43" },
   rejectedText: { color: "#A3382C" },
   actions: {
@@ -667,7 +752,18 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     backgroundColor: "#176B43",
   },
+  approveButtonDisabled: {
+    backgroundColor: "#D7E3DC",
+  },
   approveButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "800" },
+  approveButtonTextDisabled: { color: "#7B8E83" },
+  unverifiedNote: {
+    color: "#B56F00",
+    fontSize: 12,
+    fontWeight: "700",
+    alignSelf: "center",
+    marginLeft: 2,
+  },
   rejectButton: {
     borderRadius: 12,
     paddingHorizontal: 14,
