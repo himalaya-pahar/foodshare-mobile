@@ -149,7 +149,7 @@ export default function SignupScreen({ onBack }: SignupScreenProps) {
         type: "success",
         text:
           result.message ||
-          "A new verification link has been sent to your email.",
+          "A new verification link has been sent. Check your spam folder if it doesn't appear.",
       });
       setResendCooldown(60);
     } catch (err) {
@@ -269,12 +269,18 @@ export default function SignupScreen({ onBack }: SignupScreenProps) {
 
                 <Text style={styles.title}>Verify Your Email</Text>
                 <Text style={styles.message}>
-                  We've sent a verification link to{" "}
+                  We sent a verification link to{" "}
                   <Text style={styles.emailHighlight}>
                     {verificationSentEmail}
                   </Text>
-                  . Please click the link in your inbox to continue.
+                  . Tap the link in your email to continue.
                 </Text>
+
+                <View style={styles.spamNoticeBox}>
+                  <Text style={styles.spamNoticeText}>
+                    Can't find the email? Please check your spam or junk folder.
+                  </Text>
+                </View>
 
                 {resendStatus ? (
                   <View
@@ -664,15 +670,18 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   errorBox: {
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 14,
     marginBottom: 16,
-    backgroundColor: "#FFF0EE",
+    backgroundColor: "#F2F5F3",
+    borderWidth: 1,
+    borderColor: "#D5E0D8",
   },
   error: {
-    color: "#B42318",
+    color: "#27362D",
     fontSize: 14,
     lineHeight: 20,
+    fontWeight: "500",
   },
   button: {
     backgroundColor: "#176B43",
@@ -748,6 +757,20 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#17251B",
   },
+  spamNoticeBox: {
+    borderRadius: 12,
+    backgroundColor: "#F4F7F4",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 16,
+    width: "100%",
+  },
+  spamNoticeText: {
+    color: "#52655A",
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: "center",
+  },
   resendStatusBox: {
     width: "100%",
     borderRadius: 12,
@@ -756,9 +779,13 @@ const styles = StyleSheet.create({
   },
   resendStatusSuccess: {
     backgroundColor: "#E8F5E9",
+    borderWidth: 1,
+    borderColor: "#C8E6C9",
   },
   resendStatusError: {
-    backgroundColor: "#FFF0EE",
+    backgroundColor: "#F2F5F3",
+    borderWidth: 1,
+    borderColor: "#D5E0D8",
   },
   resendStatusText: {
     fontSize: 14,
@@ -770,7 +797,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   resendStatusTextError: {
-    color: "#B42318",
+    color: "#27362D",
+    fontWeight: "600",
   },
   resendButton: {
     width: "100%",

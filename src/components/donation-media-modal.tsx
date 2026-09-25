@@ -386,7 +386,7 @@ export default function DonationMediaModal({
                         ]}
                       >
                         {deletingId === item.id ? (
-                          <ActivityIndicator color="#A43C31" size="small" />
+                          <ActivityIndicator color="#455A64" size="small" />
                         ) : (
                           <Text style={styles.removeVideoText}>Remove</Text>
                         )}
@@ -422,9 +422,9 @@ const styles = StyleSheet.create({
   content: { padding: 22, paddingBottom: 34, gap: 15 },
   stateBox: { minHeight: 150, alignItems: "center", justifyContent: "center", gap: 12, borderRadius: 20, backgroundColor: "#FFFFFF" },
   stateText: { color: "#66786D", fontSize: 14 },
-  errorBox: { gap: 8, borderRadius: 15, padding: 14, backgroundColor: "#FFF0EE" },
-  errorText: { color: "#8A342A", fontSize: 14, lineHeight: 20 },
-  retryText: { color: "#9B2C22", fontSize: 14, fontWeight: "800" },
+  errorBox: { gap: 8, borderRadius: 15, padding: 14, backgroundColor: "#F2F5F3", borderWidth: 1, borderColor: "#D5E0D8" },
+  errorText: { color: "#27362D", fontSize: 14, lineHeight: 20 },
+  retryText: { color: "#176B43", fontSize: 14, fontWeight: "800" },
   sectionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
   sectionTitle: { color: "#173526", fontSize: 18, fontWeight: "800" },
   sectionHint: { marginTop: 3, color: "#66786D", fontSize: 13 },
@@ -435,7 +435,7 @@ const styles = StyleSheet.create({
   imageGrid: { flexDirection: "row", flexWrap: "wrap", gap: 11 },
   imageCard: { width: "47%", overflow: "hidden", borderRadius: 15, backgroundColor: "#FFFFFF" },
   image: { width: "100%", aspectRatio: 1.05, backgroundColor: "#E8F0EA" },
-  removeImageButton: { minHeight: 39, alignItems: "center", justifyContent: "center", backgroundColor: "#A43C31" },
+  removeImageButton: { minHeight: 39, alignItems: "center", justifyContent: "center", backgroundColor: "#455A64" },
   removeImageText: { color: "#FFFFFF", fontSize: 13, fontWeight: "800" },
   sectionDivider: { height: 1, marginVertical: 5, backgroundColor: "#E1EAE3" },
   videoCard: { flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 17, padding: 14, backgroundColor: "#FFFFFF" },
@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
   videoTitle: { color: "#173526", fontSize: 15, fontWeight: "800" },
   videoDate: { marginTop: 3, color: "#66786D", fontSize: 12 },
   removeVideoButton: { paddingVertical: 7, paddingLeft: 7 },
-  removeVideoText: { color: "#A43C31", fontSize: 13, fontWeight: "800" },
+  removeVideoText: { color: "#455A64", fontSize: 13, fontWeight: "800" },
   uploadingBox: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, borderRadius: 15, padding: 14, backgroundColor: "#EAF6EE" },
   uploadingText: { color: "#176B43", fontSize: 14, fontWeight: "700" },
   buttonPressed: { opacity: 0.55 },

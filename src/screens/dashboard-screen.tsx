@@ -431,17 +431,19 @@ const styles = StyleSheet.create({
   },
   errorBox: {
     gap: 10,
-    borderRadius: 22,
+    borderRadius: 20,
     padding: 20,
-    backgroundColor: "#FFF2F0",
+    backgroundColor: "#F2F5F3",
+    borderWidth: 1,
+    borderColor: "#D5E0D8",
   },
   errorTitle: {
-    color: "#9B2C22",
+    color: "#173526",
     fontSize: 17,
     fontWeight: "800",
   },
   errorText: {
-    color: "#7A3D36",
+    color: "#5F7367",
     fontSize: 14,
     lineHeight: 21,
   },
@@ -451,7 +453,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: "#9B2C22",
+    backgroundColor: "#176B43",
   },
   retryButtonPressed: {
     opacity: 0.78,

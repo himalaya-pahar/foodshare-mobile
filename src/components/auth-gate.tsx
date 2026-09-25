@@ -56,7 +56,9 @@ export default function AuthGate() {
       const res = await resendVerificationEmail(user.email);
       setResendStatus({
         type: "success",
-        text: res.message || "A new verification email has been sent.",
+        text:
+          res.message ||
+          "A new verification email has been sent. Check your spam folder if it doesn't appear.",
       });
       setResendCooldown(60);
     } catch (err) {
@@ -142,21 +144,22 @@ export default function AuthGate() {
 
   if (status === "restoreError") {
     stage = "restoreError";
-    title = "Could not restore your session";
+    title = "Could not restore session";
     message =
       sessionError ?? "Please check your connection and try again.";
-  } else if (user?.status === "pending_email") {
-    stage = "pending_email";
-    title = "Verify Your Email";
-    message = `Please check your inbox at ${user.email} and tap the verification link to activate your account.`;
   } else if (
+    user?.email_verified ||
     user?.status === "pending_admin" ||
     user?.approval_status === "PENDING"
   ) {
     stage = "pending_admin";
-    title = "Email Verified! Awaiting Admin Review";
+    title = "Awaiting Admin Review";
     message =
-      "Your email is verified. An administrator is currently reviewing your account details. You will be able to access FoodShare once approved.";
+      "Your email is verified. An administrator is reviewing your account.";
+  } else if (user?.status === "pending_email") {
+    stage = "pending_email";
+    title = "Verify Your Email";
+    message = `We sent a verification link to ${user.email}. Please tap the link to continue. If you don't see it, check your spam or junk folder.`;
   } else if (
     user?.status === "rejected" ||
     user?.approval_status === "REJECTED"
@@ -164,7 +167,7 @@ export default function AuthGate() {
     stage = "rejected";
     title = "Account Not Approved";
     message =
-      "Your registration was reviewed and rejected by an administrator. Please contact support for more details.";
+      "Your registration was not approved. Please contact support for assistance.";
   }
 
   return (
@@ -213,7 +216,7 @@ export default function AuthGate() {
             </View>
           ) : null}
 
-          {stage === "pending_email" ? (
+          {stage === "pending_email" && !user?.email_verified ? (
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Resend Verification Email"
@@ -375,16 +378,19 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   errorBox: {
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 14,
     marginBottom: 16,
-    backgroundColor: "#FFF0EE",
+    backgroundColor: "#F2F5F3",
+    borderWidth: 1,
+    borderColor: "#D5E0D8",
   },
   error: {
-    color: "#B42318",
+    color: "#27362D",
     fontSize: 14,
     lineHeight: 20,
     textAlign: "center",
+    fontWeight: "500",
   },
   button: {
     backgroundColor: "#176B43",
@@ -435,9 +441,13 @@ const styles = StyleSheet.create({
   },
   resendStatusSuccess: {
     backgroundColor: "#E8F5E9",
+    borderWidth: 1,
+    borderColor: "#C8E6C9",
   },
   resendStatusError: {
-    backgroundColor: "#FFF0EE",
+    backgroundColor: "#F2F5F3",
+    borderWidth: 1,
+    borderColor: "#D5E0D8",
   },
   resendStatusText: {
     fontSize: 14,
@@ -449,7 +459,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   resendStatusTextError: {
-    color: "#B42318",
+    color: "#27362D",
+    fontWeight: "600",
   },
   resendButton: {
     width: "100%",

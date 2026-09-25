@@ -60,7 +60,7 @@ function PickupRequestCard({
           ]}
         >
           {busy ? (
-            <ActivityIndicator color={canWithdraw ? "#A43C31" : "#FFFFFF"} />
+            <ActivityIndicator color={canWithdraw ? "#455A64" : "#FFFFFF"} />
           ) : (
             <Text style={canWithdraw ? styles.withdrawText : styles.collectText}>
               {canWithdraw ? "Withdraw request" : "Mark as collected"}
@@ -246,9 +246,9 @@ const styles = StyleSheet.create({
   refreshText: { color: "#176B43", fontSize: 13, fontWeight: "800" },
   stateBox: { minHeight: 160, alignItems: "center", justifyContent: "center", gap: 14, borderRadius: 24, backgroundColor: "#FFFFFF", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
   stateText: { color: "#66786D", fontSize: 14 },
-  errorBox: { gap: 10, borderRadius: 20, padding: 18, backgroundColor: "#FFF0EE" },
-  errorText: { color: "#8A342A", fontSize: 14, lineHeight: 20 },
-  retryText: { color: "#9B2C22", fontSize: 14, fontWeight: "800" },
+  errorBox: { gap: 10, borderRadius: 20, padding: 18, backgroundColor: "#F2F5F3", borderWidth: 1, borderColor: "#D5E0D8" },
+  errorText: { color: "#27362D", fontSize: 14, lineHeight: 20 },
+  retryText: { color: "#176B43", fontSize: 14, fontWeight: "800" },
   emptyBox: { alignItems: "center", borderRadius: 24, paddingHorizontal: 32, paddingVertical: 40, backgroundColor: "#FFFFFF", shadowColor: "#173526", shadowOpacity: 0.04, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
   emptyTitle: { color: "#173526", fontSize: 19, fontWeight: "800" },
   emptyText: { marginTop: 8, color: "#66786D", fontSize: 14, lineHeight: 22, textAlign: "center" },
@@ -260,8 +260,8 @@ const styles = StyleSheet.create({
   detail: { color: "#496957", fontSize: 14, lineHeight: 20 },
   muted: { color: "#87968C", fontSize: 12 },
   requestMessage: { color: "#496957", fontSize: 14, lineHeight: 20 },
-  withdrawButton: { minHeight: 46, alignItems: "center", justifyContent: "center", marginTop: 4, borderRadius: 13, backgroundColor: "#FFF0EE" },
-  withdrawText: { color: "#A43C31", fontSize: 14, fontWeight: "800" },
+  withdrawButton: { minHeight: 46, alignItems: "center", justifyContent: "center", marginTop: 4, borderRadius: 13, backgroundColor: "#ECEFF1" },
+  withdrawText: { color: "#455A64", fontSize: 14, fontWeight: "800" },
   collectButton: { minHeight: 46, alignItems: "center", justifyContent: "center", marginTop: 4, borderRadius: 13, backgroundColor: "#176B43", shadowColor: "#0D3B22", shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
   collectText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
   paginationRow: { flexDirection: "row", gap: 12 },

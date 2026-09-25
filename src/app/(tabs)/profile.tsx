@@ -780,12 +780,14 @@ const styles = StyleSheet.create({
     paddingTop: 14,
   },
   editError: {
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 14,
-    color: "#9B2C22",
+    color: "#27362D",
     fontSize: 14,
     lineHeight: 20,
-    backgroundColor: "#FFF0EE",
+    backgroundColor: "#F2F5F3",
+    borderWidth: 1,
+    borderColor: "#D5E0D8",
   },
   saveProfileButton: {
     minHeight: 56,

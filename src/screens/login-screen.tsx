@@ -59,7 +59,9 @@ export default function LoginScreen({ onSignup }: LoginScreenProps) {
       const res = await resendVerificationEmail(unverifiedEmail);
       setResendStatus({
         type: "success",
-        text: res.message || "A new verification email has been sent.",
+        text:
+          res.message ||
+          "A new verification link has been sent. Check your spam folder if it doesn't appear.",
       });
       setResendCooldown(60);
     } catch (err) {
@@ -102,13 +104,17 @@ export default function LoginScreen({ onSignup }: LoginScreenProps) {
           : "Unable to log in. Please try again.";
 
       const isUnverified =
-        (loginError instanceof ApiError &&
-          (loginError.status === 403 ||
-            /not verified|verification|verify/i.test(errorMessage))) ||
-        /not verified|verification|verify your email/i.test(errorMessage);
+        !/already verified|pending|admin|approval|review|rejected/i.test(
+          errorMessage,
+        ) &&
+        /not verified|verify your email|email verification required|email is not verified/i.test(
+          errorMessage,
+        );
 
       if (isUnverified) {
         setUnverifiedEmail(trimmedEmail);
+      } else {
+        setUnverifiedEmail(null);
       }
 
       setError(errorMessage);
@@ -199,6 +205,9 @@ export default function LoginScreen({ onSignup }: LoginScreenProps) {
 
                 {unverifiedEmail ? (
                   <View style={styles.unverifiedActionBox}>
+                    <Text style={styles.unverifiedSpamHint}>
+                      Can't find the email? Check your spam or junk folder.
+                    </Text>
                     {resendStatus ? (
                       <Text
                         style={[
@@ -387,13 +396,15 @@ const styles = StyleSheet.create({
     paddingRight: 56,
   },
   errorBox: {
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 14,
     marginBottom: 16,
-    backgroundColor: "#FFF0EE",
+    backgroundColor: "#F2F5F3",
+    borderWidth: 1,
+    borderColor: "#D5E0D8",
   },
   error: {
-    color: "#B42318",
+    color: "#27362D",
     fontSize: 14,
     lineHeight: 20,
   },
@@ -442,11 +453,16 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   unverifiedActionBox: {
-    marginTop: 12,
-    paddingTop: 12,
+    marginTop: 10,
+    paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: "rgba(180, 35, 24, 0.15)",
+    borderTopColor: "#D5E0D8",
     gap: 8,
+  },
+  unverifiedSpamHint: {
+    color: "#52655A",
+    fontSize: 13,
+    lineHeight: 18,
   },
   unverifiedFeedback: {
     fontSize: 13,
@@ -457,7 +473,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   unverifiedErrorText: {
-    color: "#B42318",
+    color: "#3D4F42",
+    fontWeight: "600",
   },
   inlineResendButton: {
     alignSelf: "flex-start",
