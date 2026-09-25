@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useFocusEffect } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import {
   ActivityIndicator,
   Alert,
+  Modal,
   Platform,
   Pressable,
   RefreshControl,
@@ -17,7 +19,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import BrandHeader from "@/components/brand-header";
 import { useAuth } from "@/providers/auth-provider";
 import PaginationControls from "@/components/pagination-controls";
-import { formatBangladeshDate } from "@/lib/datetime";
+import { formatBangladeshDate, formatBangladeshDateTime } from "@/lib/datetime";
 import {
   approveAdminUser,
   deleteAdminUser,
@@ -113,16 +115,271 @@ function getStatusBadgeConfig(item: AdminUser): {
   };
 }
 
+function AdminUserDetailModal({
+  user,
+  currentAdminId,
+  disabled,
+  onClose,
+  onApproval,
+  onDelete,
+}: {
+  user: AdminUser;
+  currentAdminId: number;
+  disabled: boolean;
+  onClose: () => void;
+  onApproval: (user: AdminUser, decision: ApprovalDecision) => void;
+  onDelete: (user: AdminUser) => void;
+}) {
+  const initial = user.full_name.trim().charAt(0).toUpperCase() || "U";
+  const statusConfig = getStatusBadgeConfig(user);
+  const isCurrentAdmin = user.id === currentAdminId;
+
+  return (
+    <Modal animationType="slide" onRequestClose={onClose} transparent>
+      <SafeAreaView style={styles.modalOverlay}>
+        <View style={styles.modalCard}>
+          <View style={styles.modalHeader}>
+            <View style={styles.modalHeaderCopy}>
+              <Text style={styles.modalEyebrow}>ACCOUNT DETAILS</Text>
+              <Text style={styles.modalTitle} numberOfLines={1}>
+                {user.full_name}
+              </Text>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Close details"
+              onPress={onClose}
+              style={({ pressed }) => [styles.modalCloseButton, pressed && styles.buttonPressed]}
+            >
+              <Ionicons name="close" size={22} color="#16673E" />
+            </Pressable>
+          </View>
+
+          <ScrollView contentContainerStyle={styles.modalBody} showsVerticalScrollIndicator={false}>
+            {/* Top User Hero Card */}
+            <View style={styles.modalHeroCard}>
+              <View style={styles.modalHeroAvatar}>
+                <Text style={styles.modalHeroAvatarText}>{initial}</Text>
+              </View>
+              <View style={styles.modalHeroInfo}>
+                <Text style={styles.modalHeroName}>{user.full_name}</Text>
+                <Text style={styles.modalHeroRole}>{formatRole(user.role)}</Text>
+                <View style={styles.modalHeroBadges}>
+                  <View style={[styles.statusBadge, statusConfig.badgeStyle]}>
+                    <Text style={[styles.statusText, statusConfig.textStyle]}>
+                      {statusConfig.label}
+                    </Text>
+                  </View>
+                  <View style={[styles.verifiedChip, user.email_verified ? styles.verifiedChipGreen : styles.verifiedChipAmber]}>
+                    <Ionicons
+                      name={user.email_verified ? "checkmark-circle" : "alert-circle-outline"}
+                      size={12}
+                      color={user.email_verified ? "#16673E" : "#B25E00"}
+                    />
+                    <Text style={[styles.verifiedChipText, user.email_verified ? styles.verifiedChipTextGreen : styles.verifiedChipTextAmber]}>
+                      {user.email_verified ? "Email Verified" : "Email Pending"}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Organization & Identification Card */}
+            <View style={styles.modalSectionCard}>
+              <View style={styles.modalDetailRow}>
+                <View style={styles.modalIconWrap}>
+                  <Ionicons name="business-outline" size={18} color="#16673E" />
+                </View>
+                <View style={styles.modalDetailInfo}>
+                  <Text style={styles.modalDetailLabel}>ORGANIZATION</Text>
+                  <Text style={styles.modalDetailValue}>
+                    {user.organization_name || "No organization name provided"}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.modalDivider} />
+
+              <View style={styles.modalDetailRow}>
+                <View style={styles.modalIconWrap}>
+                  <Ionicons name="mail-outline" size={18} color="#16673E" />
+                </View>
+                <View style={styles.modalDetailInfo}>
+                  <Text style={styles.modalDetailLabel}>EMAIL ADDRESS</Text>
+                  <Text style={styles.modalDetailValue}>{user.email}</Text>
+                </View>
+              </View>
+
+              <View style={styles.modalDivider} />
+
+              <View style={styles.modalDetailRow}>
+                <View style={styles.modalIconWrap}>
+                  <Ionicons name="call-outline" size={18} color="#16673E" />
+                </View>
+                <View style={styles.modalDetailInfo}>
+                  <Text style={styles.modalDetailLabel}>PHONE NUMBER</Text>
+                  <Text style={styles.modalDetailValue}>
+                    {user.phone || "Not provided"}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Physical Location Card */}
+            <View style={styles.modalSectionCard}>
+              <View style={styles.modalDetailRow}>
+                <View style={styles.modalIconWrap}>
+                  <Ionicons name="location-outline" size={18} color="#16673E" />
+                </View>
+                <View style={styles.modalDetailInfo}>
+                  <Text style={styles.modalDetailLabel}>PHYSICAL ADDRESS</Text>
+                  <Text style={styles.modalDetailValue}>
+                    {user.address || "No street address registered"}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.modalDivider} />
+
+              <View style={styles.modalDetailRow}>
+                <View style={styles.modalIconWrap}>
+                  <Ionicons name="map-outline" size={18} color="#16673E" />
+                </View>
+                <View style={styles.modalDetailInfo}>
+                  <Text style={styles.modalDetailLabel}>OPERATING AREA / CITY</Text>
+                  <Text style={styles.modalDetailValue}>
+                    {user.area || "Area not specified"}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Registration & Audit Timeline */}
+            <View style={styles.modalSectionCard}>
+              <View style={styles.modalDetailRow}>
+                <View style={styles.modalIconWrap}>
+                  <Ionicons name="calendar-outline" size={18} color="#16673E" />
+                </View>
+                <View style={styles.modalDetailInfo}>
+                  <Text style={styles.modalDetailLabel}>REGISTERED DATE</Text>
+                  <Text style={styles.modalDetailValue}>
+                    {formatBangladeshDateTime(user.created_at)}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.modalDivider} />
+
+              <View style={styles.modalDetailRow}>
+                <View style={styles.modalIconWrap}>
+                  <Ionicons name="shield-checkmark-outline" size={18} color="#16673E" />
+                </View>
+                <View style={styles.modalDetailInfo}>
+                  <Text style={styles.modalDetailLabel}>ADMIN APPROVAL DECISION</Text>
+                  <Text style={styles.modalDetailValue}>
+                    {statusConfig.isPendingReview
+                      ? "Awaiting Administrator Review"
+                      : user.status === "active" || user.approval_status === "APPROVED"
+                        ? "Account Approved & Active"
+                        : "Account Rejected"}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Decision Actions for Admins */}
+            {statusConfig.isPendingReview ? (
+              <View style={styles.modalActionsCard}>
+                <Text style={styles.modalActionsTitle}>Review Decision</Text>
+                <Text style={styles.modalActionsSubtitle}>
+                  {statusConfig.isPendingEmail
+                    ? "User must verify their email before they can be approved."
+                    : "Approve this user to grant access to the FoodShare network."}
+                </Text>
+
+                <View style={styles.modalDecisionRow}>
+                  <Pressable
+                    accessibilityRole="button"
+                    disabled={disabled}
+                    onPress={() => onApproval(user, "REJECTED")}
+                    style={({ pressed }) => [
+                      styles.modalRejectButton,
+                      pressed && !disabled && styles.buttonPressed,
+                      disabled && styles.buttonDisabled,
+                    ]}
+                  >
+                    <Text style={styles.modalRejectButtonText}>Reject</Text>
+                  </Pressable>
+
+                  <Pressable
+                    accessibilityRole="button"
+                    disabled={disabled || statusConfig.isPendingEmail}
+                    onPress={() => onApproval(user, "APPROVED")}
+                    style={({ pressed }) => [
+                      styles.modalApproveButton,
+                      statusConfig.isPendingEmail && styles.approveButtonDisabled,
+                      pressed && !disabled && !statusConfig.isPendingEmail && styles.buttonPressed,
+                      (disabled || statusConfig.isPendingEmail) && styles.buttonDisabled,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.modalApproveButtonText,
+                        statusConfig.isPendingEmail && styles.approveButtonTextDisabled,
+                      ]}
+                    >
+                      Approve Account
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : null}
+
+            {/* Danger / Deletion Zone */}
+            {!isCurrentAdmin ? (
+              <Pressable
+                accessibilityRole="button"
+                disabled={disabled}
+                onPress={() => onDelete(user)}
+                style={({ pressed }) => [
+                  styles.modalDeleteButton,
+                  pressed && !disabled && styles.buttonPressed,
+                  disabled && styles.buttonDisabled,
+                ]}
+              >
+                <Ionicons name="trash-outline" size={16} color="#BA1A1A" />
+                <Text style={styles.modalDeleteButtonText}>Delete User Account</Text>
+              </Pressable>
+            ) : null}
+
+            {/* Done Button */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Done"
+              onPress={onClose}
+              style={({ pressed }) => [styles.modalDoneButton, pressed && styles.buttonPressed]}
+            >
+              <Text style={styles.modalDoneButtonText}>Done</Text>
+            </Pressable>
+          </ScrollView>
+        </View>
+      </SafeAreaView>
+    </Modal>
+  );
+}
+
 function UserRow({
   item,
   currentAdminId,
   disabled,
+  onSelect,
   onApproval,
   onDelete,
 }: {
   item: AdminUser;
   currentAdminId: number;
   disabled: boolean;
+  onSelect: (user: AdminUser) => void;
   onApproval: (user: AdminUser, decision: ApprovalDecision) => void;
   onDelete: (user: AdminUser) => void;
 }) {
@@ -130,7 +387,12 @@ function UserRow({
   const statusConfig = getStatusBadgeConfig(item);
 
   return (
-    <View style={styles.userRow}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`View account details for ${item.full_name}`}
+      onPress={() => onSelect(item)}
+      style={({ pressed }) => [styles.userRow, pressed && styles.cardPressed]}
+    >
       <View style={styles.avatar}>
         <Text style={styles.avatarText}>{initial}</Text>
       </View>
@@ -154,9 +416,25 @@ function UserRow({
         <Text style={styles.email} numberOfLines={1}>
           {item.email}
         </Text>
-        <Text style={styles.meta}>
-          {formatRole(item.role)} · {formatJoinedDate(item.created_at)}
-        </Text>
+
+        {item.area || item.address ? (
+          <View style={styles.locationSnippetRow}>
+            <Ionicons name="location-outline" size={12} color="#456351" />
+            <Text style={styles.locationSnippetText} numberOfLines={1}>
+              {item.area ? `${item.area}${item.address ? ` · ${item.address}` : ""}` : item.address}
+            </Text>
+          </View>
+        ) : null}
+
+        <View style={styles.metaRow}>
+          <Text style={styles.meta}>
+            {formatRole(item.role)} · {formatJoinedDate(item.created_at)}
+          </Text>
+
+          <View style={styles.viewDetailsChip}>
+            <Text style={styles.viewDetailsText}>View Details ›</Text>
+          </View>
+        </View>
 
         <View style={styles.actions}>
           {statusConfig.isPendingReview ? (
@@ -164,7 +442,10 @@ function UserRow({
               <Pressable
                 accessibilityRole="button"
                 disabled={disabled}
-                onPress={() => onApproval(item, "REJECTED")}
+                onPress={(e) => {
+                  e.stopPropagation?.();
+                  onApproval(item, "REJECTED");
+                }}
                 style={({ pressed }) => [
                   styles.rejectButton,
                   pressed && !disabled && styles.buttonPressed,
@@ -177,7 +458,10 @@ function UserRow({
               <Pressable
                 accessibilityRole="button"
                 disabled={disabled || statusConfig.isPendingEmail}
-                onPress={() => onApproval(item, "APPROVED")}
+                onPress={(e) => {
+                  e.stopPropagation?.();
+                  onApproval(item, "APPROVED");
+                }}
                 style={({ pressed }) => [
                   styles.approveButton,
                   statusConfig.isPendingEmail && styles.approveButtonDisabled,
@@ -212,7 +496,10 @@ function UserRow({
             <Pressable
               accessibilityRole="button"
               disabled={disabled}
-              onPress={() => onDelete(item)}
+              onPress={(e) => {
+                e.stopPropagation?.();
+                onDelete(item);
+              }}
               style={({ pressed }) => [
                 styles.deleteButton,
                 pressed && !disabled && styles.buttonPressed,
@@ -224,7 +511,7 @@ function UserRow({
           )}
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -246,6 +533,7 @@ export default function AdminUsersScreen() {
   const [error, setError] = useState<string | null>(null);
   const [busyUserId, setBusyUserId] = useState<number | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -567,6 +855,7 @@ export default function AdminUsersScreen() {
                 item={item}
                 currentAdminId={user.id}
                 disabled={busyUserId !== null}
+                onSelect={(target) => setSelectedUser(target)}
                 onApproval={handleApproval}
                 onDelete={confirmDelete}
               />
@@ -581,6 +870,23 @@ export default function AdminUsersScreen() {
           onPageChange={changePage}
         />
       </ScrollView>
+
+      {selectedUser ? (
+        <AdminUserDetailModal
+          user={selectedUser}
+          currentAdminId={user.id}
+          disabled={busyUserId !== null}
+          onClose={() => setSelectedUser(null)}
+          onApproval={(targetUser, decision) => {
+            setSelectedUser(null);
+            handleApproval(targetUser, decision);
+          }}
+          onDelete={(targetUser) => {
+            setSelectedUser(null);
+            confirmDelete(targetUser);
+          }}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -882,4 +1188,302 @@ const styles = StyleSheet.create({
   },
   accessTitle: { color: "#173526", fontSize: 22, fontWeight: "800" },
   accessText: { color: "#6D7F73", fontSize: 15, textAlign: "center" },
+
+  cardPressed: {
+    opacity: 0.88,
+    transform: [{ scale: 0.99 }],
+  },
+  locationSnippetRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 2,
+  },
+  locationSnippetText: {
+    color: "#456351",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    marginTop: 2,
+  },
+  viewDetailsChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    backgroundColor: "#EAF5EE",
+    borderWidth: 1,
+    borderColor: "#BEDECB",
+  },
+  viewDetailsText: {
+    color: "#16673E",
+    fontSize: 11,
+    fontWeight: "800",
+  },
+
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(13, 36, 24, 0.5)",
+  },
+  modalCard: {
+    maxHeight: "90%",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    backgroundColor: "#F4F7F3",
+    overflow: "hidden",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 16,
+    paddingHorizontal: 22,
+    paddingVertical: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: "#DCE7E0",
+    backgroundColor: "#FAFDFB",
+  },
+  modalHeaderCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  modalEyebrow: {
+    color: "#6A8374",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1.1,
+  },
+  modalTitle: {
+    color: "#173526",
+    fontSize: 20,
+    fontWeight: "800",
+    letterSpacing: -0.4,
+  },
+  modalCloseButton: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 12,
+    backgroundColor: "#E6F1E9",
+    borderWidth: 1,
+    borderColor: "#CFE3D5",
+  },
+  modalBody: {
+    padding: 20,
+    gap: 16,
+    paddingBottom: 36,
+  },
+  modalHeroCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    borderRadius: 20,
+    padding: 16,
+    backgroundColor: "#FAFDFB",
+    borderWidth: 1.2,
+    borderColor: "#DCE7E0",
+  },
+  modalHeroAvatar: {
+    width: 54,
+    height: 54,
+    borderRadius: 18,
+    backgroundColor: "#16673E",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalHeroAvatarText: {
+    color: "#FFFFFF",
+    fontSize: 22,
+    fontWeight: "800",
+  },
+  modalHeroInfo: {
+    flex: 1,
+    gap: 3,
+  },
+  modalHeroName: {
+    color: "#173526",
+    fontSize: 18,
+    fontWeight: "800",
+    letterSpacing: -0.3,
+  },
+  modalHeroRole: {
+    color: "#456351",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  modalHeroBadges: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 4,
+  },
+  verifiedChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  verifiedChipGreen: {
+    backgroundColor: "#EAF5EE",
+    borderColor: "#BEDECB",
+  },
+  verifiedChipAmber: {
+    backgroundColor: "#FFF8E1",
+    borderColor: "#FFE082",
+  },
+  verifiedChipText: {
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  verifiedChipTextGreen: {
+    color: "#16673E",
+  },
+  verifiedChipTextAmber: {
+    color: "#B25E00",
+  },
+  modalSectionCard: {
+    borderRadius: 20,
+    padding: 16,
+    backgroundColor: "#FAFDFB",
+    borderWidth: 1.2,
+    borderColor: "#DCE7E0",
+    gap: 12,
+  },
+  modalDetailRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+  },
+  modalIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: "#EAF5EE",
+    borderWidth: 1,
+    borderColor: "#BEDECB",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
+  },
+  modalDetailInfo: {
+    flex: 1,
+    gap: 3,
+  },
+  modalDetailLabel: {
+    color: "#75867C",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+  },
+  modalDetailValue: {
+    color: "#173526",
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 20,
+  },
+  modalDivider: {
+    height: 1,
+    backgroundColor: "#E6EFE9",
+  },
+  modalActionsCard: {
+    borderRadius: 20,
+    padding: 16,
+    backgroundColor: "#FAFDFB",
+    borderWidth: 1.2,
+    borderColor: "#DCE7E0",
+    gap: 6,
+  },
+  modalActionsTitle: {
+    color: "#173526",
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  modalActionsSubtitle: {
+    color: "#556A5D",
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  modalDecisionRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 8,
+  },
+  modalRejectButton: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: 12,
+    backgroundColor: "#FCEEEE",
+    borderWidth: 1,
+    borderColor: "#F2B8B5",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalRejectButtonText: {
+    color: "#BA1A1A",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  modalApproveButton: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: 12,
+    backgroundColor: "#16673E",
+    borderWidth: 1,
+    borderColor: "#1E8250",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalApproveButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  modalDeleteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    minHeight: 46,
+    borderRadius: 14,
+    backgroundColor: "#FCEEEE",
+    borderWidth: 1,
+    borderColor: "#F2B8B5",
+  },
+  modalDeleteButtonText: {
+    color: "#BA1A1A",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  modalDoneButton: {
+    minHeight: 52,
+    borderRadius: 16,
+    backgroundColor: "#16673E",
+    borderWidth: 1,
+    borderColor: "#1E8250",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#0D3B22",
+    shadowOpacity: 0.22,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+    marginTop: 4,
+  },
+  modalDoneButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "800",
+  },
 });

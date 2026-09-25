@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -22,7 +22,10 @@ import {
 import { useAuth } from "@/providers/auth-provider";
 import BrandHeader from "@/components/brand-header";
 import PaginationControls from "@/components/pagination-controls";
-import { getRestaurantDonations } from "@/services/donations";
+import {
+  getDonationById,
+  getRestaurantDonations,
+} from "@/services/donations";
 import {
   getDonationFlows,
   getMyDonationHistory,
@@ -133,6 +136,15 @@ function legacyDonationFlows(
         currentStatus ??
         (isJourneyStatus(donationStatus) ? donationStatus : null),
       status_timestamps: timestamps,
+      quantity: donation?.quantity ?? null,
+      unit: donation?.unit ?? null,
+      pickup_address: donation?.pickup_address ?? null,
+      pickup_area: donation?.pickup_area ?? null,
+      pickup_deadline: donation?.pickup_deadline ?? null,
+      prepared_at: donation?.prepared_at ?? null,
+      storage_notes: donation?.storage_notes ?? null,
+      allergen_info: donation?.allergen_info ?? null,
+      description: donation?.description ?? null,
     };
   });
 }
@@ -174,6 +186,33 @@ function FlowDetailModal({
   mode: HistoryMode;
   onClose: () => void;
 }) {
+  const [extraDonation, setExtraDonation] = useState<DonationFeedItem | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    if (flow.donation_id && (!flow.pickup_address || flow.quantity === undefined || flow.quantity === null)) {
+      getDonationById(flow.donation_id)
+        .then((data) => {
+          if (active) setExtraDonation(data);
+        })
+        .catch(() => {});
+    }
+    return () => {
+      active = false;
+    };
+  }, [flow.donation_id, flow.pickup_address, flow.quantity]);
+
+  const quantity = flow.quantity ?? extraDonation?.quantity ?? null;
+  const unit = flow.unit ?? extraDonation?.unit ?? null;
+  const pickupAddress = flow.pickup_address ?? extraDonation?.pickup_address ?? null;
+  const pickupArea = flow.pickup_area ?? extraDonation?.pickup_area ?? null;
+  const pickupDeadline = flow.pickup_deadline ?? extraDonation?.pickup_deadline ?? null;
+  const preparedAt = flow.prepared_at ?? extraDonation?.prepared_at ?? null;
+  const storageNotes = flow.storage_notes ?? extraDonation?.storage_notes ?? null;
+  const allergenInfo = flow.allergen_info ?? extraDonation?.allergen_info ?? null;
+  const description = flow.description ?? extraDonation?.description ?? null;
+  const foodName = flow.food_name?.trim() || extraDonation?.food_name?.trim() || "Food Surplus Donation";
+
   const steps = mode === "donations" ? DONATION_STEPS : PICKUP_STEPS;
   const currentStep = flow.current_status && isTimelineStep(flow.current_status, steps)
     ? flow.current_status
@@ -230,7 +269,7 @@ function FlowDetailModal({
             <View style={styles.modalHeaderCopy}>
               <Text style={styles.modalEyebrow}>JOURNEY DETAILS</Text>
               <Text style={styles.modalTitle} numberOfLines={2}>
-                {flow.food_name?.trim() || "Food Surplus Donation"}
+                {foodName}
               </Text>
             </View>
             <Pressable
@@ -262,10 +301,88 @@ function FlowDetailModal({
               </View>
             </View>
 
+            {/* Quantity and Portion Details */}
+            {(quantity !== null && quantity !== undefined) || pickupDeadline || preparedAt ? (
+              <View style={styles.modalMetaCard}>
+                {quantity !== null && quantity !== undefined ? (
+                  <View style={styles.modalMetaRow}>
+                    <View style={styles.modalMetaIconWrap}>
+                      <Ionicons name="cube-outline" size={18} color="#16673E" />
+                    </View>
+                    <View style={styles.modalMetaInfo}>
+                      <Text style={styles.modalMetaLabel}>PORTION & QUANTITY</Text>
+                      <Text style={styles.modalMetaValue}>
+                        {quantity} {unit || "servings"}
+                      </Text>
+                    </View>
+                  </View>
+                ) : null}
+
+                {pickupDeadline ? (
+                  <>
+                    {quantity !== null && quantity !== undefined ? (
+                      <View style={styles.modalMetaDivider} />
+                    ) : null}
+                    <View style={styles.modalMetaRow}>
+                      <View style={styles.modalMetaIconWrap}>
+                        <Ionicons name="time-outline" size={18} color="#16673E" />
+                      </View>
+                      <View style={styles.modalMetaInfo}>
+                        <Text style={styles.modalMetaLabel}>PICKUP DEADLINE</Text>
+                        <Text style={styles.modalMetaValue}>
+                          Safe until {formatBangladeshDateTime(pickupDeadline)}
+                        </Text>
+                      </View>
+                    </View>
+                  </>
+                ) : null}
+
+                {preparedAt ? (
+                  <>
+                    <View style={styles.modalMetaDivider} />
+                    <View style={styles.modalMetaRow}>
+                      <View style={styles.modalMetaIconWrap}>
+                        <Ionicons name="restaurant-outline" size={18} color="#16673E" />
+                      </View>
+                      <View style={styles.modalMetaInfo}>
+                        <Text style={styles.modalMetaLabel}>PREPARED TIME</Text>
+                        <Text style={styles.modalMetaValue}>
+                          {formatBangladeshDateTime(preparedAt)}
+                        </Text>
+                      </View>
+                    </View>
+                  </>
+                ) : null}
+              </View>
+            ) : null}
+
+            {/* Pickup Address & Operating Area */}
+            {pickupAddress || pickupArea ? (
+              <View style={styles.modalMetaCard}>
+                <View style={styles.modalMetaRow}>
+                  <View style={styles.modalMetaIconWrap}>
+                    <Ionicons name="location-outline" size={18} color="#16673E" />
+                  </View>
+                  <View style={styles.modalMetaInfo}>
+                    <Text style={styles.modalMetaLabel}>PICKUP LOCATION</Text>
+                    <Text style={styles.modalMetaValue}>
+                      {pickupAddress || "Pickup address available upon reservation"}
+                    </Text>
+                    {pickupArea ? (
+                      <View style={styles.modalAreaTag}>
+                        <Text style={styles.modalAreaTagText}>Area: {pickupArea}</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                </View>
+              </View>
+            ) : null}
+
+            {/* Organization Involved */}
             <View style={styles.modalOrgCard}>
               <View style={styles.modalOrgRow}>
                 <View style={styles.modalOrgIconWrap}>
-                  <Ionicons name="restaurant-outline" size={18} color="#16673E" />
+                  <Ionicons name="business-outline" size={18} color="#16673E" />
                 </View>
                 <View style={styles.modalOrgInfo}>
                   <Text style={styles.modalOrgLabel}>DONATED BY</Text>
@@ -290,6 +407,33 @@ function FlowDetailModal({
               </View>
             </View>
 
+            {/* Food Details, Storage & Allergens */}
+            {description || storageNotes || allergenInfo ? (
+              <View style={styles.modalMetaCard}>
+                {description ? (
+                  <View style={styles.modalDetailBlock}>
+                    <Text style={styles.modalMetaLabel}>FOOD DESCRIPTION</Text>
+                    <Text style={styles.modalDetailDesc}>{description}</Text>
+                  </View>
+                ) : null}
+
+                {storageNotes ? (
+                  <View style={[styles.modalDetailBlock, Boolean(description) && styles.modalDetailBlockSpaced]}>
+                    <Text style={styles.modalMetaLabel}>STORAGE & HANDLING INSTRUCTIONS</Text>
+                    <Text style={styles.modalDetailDesc}>{storageNotes}</Text>
+                  </View>
+                ) : null}
+
+                {allergenInfo ? (
+                  <View style={[styles.modalDetailBlock, Boolean(description || storageNotes) && styles.modalDetailBlockSpaced]}>
+                    <Text style={styles.modalMetaLabel}>DIETARY & ALLERGEN ADVICE</Text>
+                    <Text style={styles.modalDetailDesc}>{allergenInfo}</Text>
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
+
+            {/* Full Lifecycle Audit Timeline */}
             <View style={styles.modalTimelineCard}>
               <Text style={styles.modalSectionTitle}>Lifecycle Timeline</Text>
               <Text style={styles.modalSectionSubtitle}>
@@ -458,6 +602,29 @@ function FlowCard({
           </View>
         ) : null}
       </View>
+
+      {/* Concise Portion & Location Badges */}
+      {(flow.quantity !== null && flow.quantity !== undefined) || flow.pickup_area || flow.pickup_address ? (
+        <View style={styles.flowItemMetaRow}>
+          {flow.quantity !== null && flow.quantity !== undefined ? (
+            <View style={styles.flowMetaPill}>
+              <Ionicons name="cube-outline" size={13} color="#16673E" />
+              <Text style={styles.flowMetaPillText}>
+                {flow.quantity} {flow.unit || "servings"}
+              </Text>
+            </View>
+          ) : null}
+
+          {flow.pickup_area || flow.pickup_address ? (
+            <View style={[styles.flowMetaPill, { flexShrink: 1 }]}>
+              <Ionicons name="location-outline" size={13} color="#16673E" />
+              <Text style={styles.flowMetaPillText} numberOfLines={1}>
+                {flow.pickup_area || flow.pickup_address}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+      ) : null}
 
       <View style={styles.organizationBox}>
         <View style={styles.organizationColumn}>
@@ -1032,6 +1199,101 @@ const styles = StyleSheet.create({
     color: "#556A5D",
     fontSize: 12,
     lineHeight: 18,
+  },
+  flowItemMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  flowMetaPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: "#EBF5EE",
+    borderWidth: 1,
+    borderColor: "#CCE5D6",
+  },
+  flowMetaPillText: {
+    color: "#16673E",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  modalMetaCard: {
+    borderRadius: 20,
+    padding: 16,
+    backgroundColor: "#FAFDFB",
+    borderWidth: 1.2,
+    borderColor: "#DCE7E0",
+    gap: 12,
+  },
+  modalMetaRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+  },
+  modalMetaIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: "#EAF5EE",
+    borderWidth: 1,
+    borderColor: "#BEDECB",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
+  },
+  modalMetaInfo: {
+    flex: 1,
+    gap: 3,
+  },
+  modalMetaLabel: {
+    color: "#75867C",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+  },
+  modalMetaValue: {
+    color: "#173526",
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 20,
+  },
+  modalMetaDivider: {
+    height: 1,
+    backgroundColor: "#E6EFE9",
+  },
+  modalAreaTag: {
+    alignSelf: "flex-start",
+    marginTop: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    backgroundColor: "#EAF5EE",
+    borderWidth: 1,
+    borderColor: "#CBE4D5",
+  },
+  modalAreaTagText: {
+    color: "#16673E",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  modalDetailBlock: {
+    gap: 4,
+  },
+  modalDetailBlockSpaced: {
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#E6EFE9",
+  },
+  modalDetailDesc: {
+    color: "#354A3E",
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: "500",
   },
   modalDoneButton: {
     minHeight: 52,

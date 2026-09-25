@@ -39,4 +39,13 @@ export interface HistoryFlow {
   receiver_organization_name: string | null;
   current_status: JourneyStatus | null;
   status_timestamps: Partial<Record<JourneyStatus, string>>;
+  quantity?: number | null;
+  unit?: string | null;
+  pickup_address?: string | null;
+  pickup_area?: string | null;
+  pickup_deadline?: string | null;
+  prepared_at?: string | null;
+  storage_notes?: string | null;
+  allergen_info?: string | null;
+  description?: string | null;
 }

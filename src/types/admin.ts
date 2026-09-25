@@ -16,6 +16,9 @@ export interface AdminUser {
   email_verified: boolean;
   approval_status?: ApprovalStatus;
   created_at: string;
+  phone?: string | null;
+  address?: string | null;
+  area?: string | null;
 }
 
 export interface AdminStats {
