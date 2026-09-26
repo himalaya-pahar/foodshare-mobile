@@ -1,6 +1,6 @@
 import { fetch } from "expo/fetch";
 
-import { apiRequest } from "@/lib/api";
+import { ApiError, apiRequest } from "@/lib/api";
 import type {
   ProfileImage,
   ProfileImageContentType,
@@ -16,20 +16,73 @@ export function getMyProfileImage(): Promise<ProfileImage | null> {
   return apiRequest<ProfileImage | null>("/profile-image/me");
 }
 
+export function deleteProfileImage(imageId: number): Promise<void> {
+  return apiRequest<void>(`/profile-image/${imageId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function removeMyProfileImage(
+  knownImageId?: number | null,
+): Promise<void> {
+  let id = knownImageId;
+  if (!id) {
+    const existing = await getMyProfileImage();
+    id = existing?.id;
+  }
+  if (!id) {
+    return;
+  }
+  await deleteProfileImage(id);
+}
+
 export async function uploadProfileImage(
   contentType: ProfileImageContentType,
   file: Blob,
+  existingImageId?: number | null,
 ): Promise<ProfileImage> {
-  const upload = await apiRequest<ProfileImageUploadUrl>(
-    "/profile-image/upload-url",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+  if (existingImageId) {
+    try {
+      await deleteProfileImage(existingImageId);
+    } catch {
+      // Best-effort cleanup, proceed to upload request
+    }
+  }
+
+  let upload: ProfileImageUploadUrl;
+  try {
+    upload = await apiRequest<ProfileImageUploadUrl>(
+      "/profile-image/upload-url",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ content_type: contentType }),
       },
-      body: JSON.stringify({ content_type: contentType }),
-    },
-  );
+    );
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 409) {
+      const existing = await getMyProfileImage();
+      if (existing?.id) {
+        await deleteProfileImage(existing.id);
+        upload = await apiRequest<ProfileImageUploadUrl>(
+          "/profile-image/upload-url",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ content_type: contentType }),
+          },
+        );
+      } else {
+        throw error;
+      }
+    } else {
+      throw error;
+    }
+  }
 
   const uploadResponse = await fetch(upload.upload_url, {
     method: "PUT",
@@ -48,3 +101,4 @@ export async function uploadProfileImage(
     { method: "POST" },
   );
 }
+

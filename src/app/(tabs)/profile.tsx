@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { File } from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
@@ -5,6 +6,7 @@ import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -19,10 +21,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import BrandHeader from "@/components/brand-header";
 import LogoutButton from "@/components/logout-button";
-import { getCachedData, setCachedData } from "@/lib/cache";
+import { getCachedData, invalidateCache, setCachedData } from "@/lib/cache";
 import { useAuth } from "@/providers/auth-provider";
 import {
   getMyProfileImage,
+  removeMyProfileImage,
   uploadProfileImage,
 } from "@/services/profile-image";
 import type {
@@ -304,9 +307,11 @@ function ProfileEditModal({
 export default function ProfileScreen() {
   const { user, updateProfile } = useAuth();
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const [profileImageId, setProfileImageId] = useState<number | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [photoMessage, setPhotoMessage] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [removingPhoto, setRemovingPhoto] = useState(false);
   const [editingProfile, setEditingProfile] = useState(false);
 
   useFocusEffect(
@@ -314,9 +319,11 @@ export default function ProfileScreen() {
       let active = true;
 
       async function loadProfileImage() {
-        const cachedUrl = getCachedData<string>("my_profile_image_url");
+        const cached = getCachedData<{ id: number; url: string }>("my_profile_image");
+        const cachedUrl = cached?.url ?? getCachedData<string>("my_profile_image_url");
         if (cachedUrl && active) {
           setProfileImageUrl(cachedUrl);
+          if (cached?.id) setProfileImageId(cached.id);
         }
 
         try {
@@ -324,8 +331,13 @@ export default function ProfileScreen() {
 
           if (active) {
             setProfileImageUrl(image?.media_url ?? null);
-            if (image?.media_url) {
+            setProfileImageId(image?.id ?? null);
+            if (image) {
               setCachedData("my_profile_image_url", image.media_url, 120_000);
+              setCachedData("my_profile_image", { id: image.id, url: image.media_url }, 120_000);
+            } else {
+              invalidateCache("my_profile_image");
+              invalidateCache("my_profile_image_url");
             }
             setPhotoError(null);
           }
@@ -344,8 +356,50 @@ export default function ProfileScreen() {
     }, []),
   );
 
+  function confirmRemovePhoto() {
+    if (uploadingPhoto || removingPhoto) return;
+
+    Alert.alert(
+      "Remove profile photo",
+      "Are you sure you want to remove your profile photo?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: () => void handleRemovePhoto(),
+        },
+      ],
+    );
+  }
+
+  async function handleRemovePhoto() {
+    if (uploadingPhoto || removingPhoto) return;
+
+    setPhotoError(null);
+    setPhotoMessage(null);
+    setRemovingPhoto(true);
+
+    try {
+      await removeMyProfileImage(profileImageId);
+      setProfileImageUrl(null);
+      setProfileImageId(null);
+      invalidateCache("my_profile_image");
+      invalidateCache("my_profile_image_url");
+      setPhotoMessage("Profile photo removed.");
+    } catch (error) {
+      setPhotoError(
+        error instanceof Error
+          ? error.message
+          : "Could not remove your profile photo.",
+      );
+    } finally {
+      setRemovingPhoto(false);
+    }
+  }
+
   async function chooseProfilePhoto() {
-    if (uploadingPhoto) return;
+    if (uploadingPhoto || removingPhoto) return;
 
     setPhotoError(null);
     setPhotoMessage(null);
@@ -394,10 +448,20 @@ export default function ProfileScreen() {
 
       setUploadingPhoto(true);
 
-      const savedImage = await uploadProfileImage(contentType, file);
+      const savedImage = await uploadProfileImage(
+        contentType,
+        file,
+        profileImageId,
+      );
 
       setProfileImageUrl(savedImage.media_url);
+      setProfileImageId(savedImage.id);
       setCachedData("my_profile_image_url", savedImage.media_url, 120_000);
+      setCachedData(
+        "my_profile_image",
+        { id: savedImage.id, url: savedImage.media_url },
+        120_000,
+      );
       setPhotoMessage("Profile photo updated.");
     } catch (error) {
       setPhotoError(
@@ -416,6 +480,7 @@ export default function ProfileScreen() {
   const photoButtonLabel = profileImageUrl
     ? "Change profile photo"
     : "Add profile photo";
+  const isPhotoBusy = uploadingPhoto || removingPhoto;
 
   return (
     <SafeAreaView
@@ -435,12 +500,12 @@ export default function ProfileScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={photoButtonLabel}
-            accessibilityState={{ disabled: uploadingPhoto, busy: uploadingPhoto }}
-            disabled={uploadingPhoto}
+            accessibilityState={{ disabled: isPhotoBusy, busy: isPhotoBusy }}
+            disabled={isPhotoBusy}
             onPress={() => void chooseProfilePhoto()}
             style={({ pressed }) => [
               styles.avatarButton,
-              pressed && !uploadingPhoto && styles.avatarPressed,
+              pressed && !isPhotoBusy && styles.avatarPressed,
             ]}
           >
             <View style={styles.avatar}>
@@ -456,7 +521,7 @@ export default function ProfileScreen() {
                 <Text style={styles.avatarText}>{initial}</Text>
               )}
 
-              {uploadingPhoto ? (
+              {isPhotoBusy ? (
                 <View style={styles.uploadOverlay}>
                   <ActivityIndicator color="#FFFFFF" />
                 </View>
@@ -464,20 +529,60 @@ export default function ProfileScreen() {
             </View>
           </Pressable>
 
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ disabled: uploadingPhoto, busy: uploadingPhoto }}
-            disabled={uploadingPhoto}
-            onPress={() => void chooseProfilePhoto()}
-            style={({ pressed }) => [
-              styles.photoButton,
-              (pressed || uploadingPhoto) && styles.photoButtonPressed,
-            ]}
-          >
-            <Text style={styles.photoButtonText}>
-              {uploadingPhoto ? "Uploading photo…" : photoButtonLabel}
-            </Text>
-          </Pressable>
+          {profileImageUrl ? (
+            <View style={styles.photoActionsRow}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Change profile photo"
+                accessibilityState={{ disabled: isPhotoBusy, busy: uploadingPhoto }}
+                disabled={isPhotoBusy}
+                onPress={() => void chooseProfilePhoto()}
+                style={({ pressed }) => [
+                  styles.photoButton,
+                  (pressed || isPhotoBusy) && styles.photoButtonPressed,
+                ]}
+              >
+                <Ionicons name="camera-outline" size={15} color="#16673E" />
+                <Text style={styles.photoButtonText}>
+                  {uploadingPhoto ? "Uploading…" : "Change"}
+                </Text>
+              </Pressable>
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Remove profile photo"
+                accessibilityState={{ disabled: isPhotoBusy, busy: removingPhoto }}
+                disabled={isPhotoBusy}
+                onPress={confirmRemovePhoto}
+                style={({ pressed }) => [
+                  styles.removePhotoButton,
+                  (pressed || isPhotoBusy) && styles.removePhotoButtonPressed,
+                ]}
+              >
+                <Ionicons name="trash-outline" size={15} color="#C62828" />
+                <Text style={styles.removePhotoButtonText}>
+                  {removingPhoto ? "Removing…" : "Remove"}
+                </Text>
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Add profile photo"
+              accessibilityState={{ disabled: isPhotoBusy, busy: uploadingPhoto }}
+              disabled={isPhotoBusy}
+              onPress={() => void chooseProfilePhoto()}
+              style={({ pressed }) => [
+                styles.photoButton,
+                (pressed || isPhotoBusy) && styles.photoButtonPressed,
+              ]}
+            >
+              <Ionicons name="camera-outline" size={15} color="#16673E" />
+              <Text style={styles.photoButtonText}>
+                {uploadingPhoto ? "Uploading photo…" : "Add profile photo"}
+              </Text>
+            </Pressable>
+          )}
 
           {photoError ? (
             <Text style={styles.photoError} accessibilityRole="alert">
@@ -623,7 +728,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "rgba(23, 75, 54, 0.72)",
   },
+  photoActionsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    marginTop: 2,
+  },
   photoButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
     borderRadius: 999,
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -637,6 +752,26 @@ const styles = StyleSheet.create({
   },
   photoButtonText: {
     color: "#16673E",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  removePhotoButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: "#FDF2F2",
+    borderWidth: 1,
+    borderColor: "#F5C6C6",
+  },
+  removePhotoButtonPressed: {
+    opacity: 0.75,
+    transform: [{ scale: 0.97 }],
+  },
+  removePhotoButtonText: {
+    color: "#C62828",
     fontSize: 13,
     fontWeight: "800",
   },
