@@ -306,10 +306,10 @@ function DonationFormModal({
   }
 
   return (
-    <Modal animationType="slide" onRequestClose={onClose} transparent>
+    <Modal animationType="slide" onRequestClose={onClose} transparent statusBarTranslucent>
       <SafeAreaView style={styles.modalScreen}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
           keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
           style={styles.keyboardContainer}
         >
@@ -335,8 +335,10 @@ function DonationFormModal({
             </View>
 
             <ScrollView
-              contentContainerStyle={[styles.formContent, { paddingBottom: 160 }]}
+              contentContainerStyle={[styles.formContent, { paddingBottom: 280 }]}
               keyboardShouldPersistTaps="handled"
+              automaticallyAdjustKeyboardInsets={true}
+              keyboardDismissMode="on-drag"
               showsVerticalScrollIndicator={false}
             >
               <InputField
@@ -1201,7 +1203,7 @@ const styles = StyleSheet.create({
   accessTitle: { color: "#173526", fontSize: 22, fontWeight: "800" },
   accessText: { marginTop: 8, color: "#66786D", fontSize: 15, textAlign: "center" },
   modalScreen: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(13, 36, 24, 0.5)" },
-  modalCard: { maxHeight: "92%", borderTopLeftRadius: 28, borderTopRightRadius: 28, backgroundColor: "#FAFDFB" },
+  modalCard: { maxHeight: "92%", flexShrink: 1, borderTopLeftRadius: 28, borderTopRightRadius: 28, backgroundColor: "#FAFDFB", overflow: "hidden" },
   modalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16, paddingHorizontal: 22, paddingVertical: 20, borderBottomWidth: 1, borderBottomColor: "#E3ECE5" },
   modalEyebrow: { color: "#6A8374", fontSize: 11, fontWeight: "800", letterSpacing: 1.1 },
   modalTitle: { marginTop: 4, color: "#173526", fontSize: 22, fontWeight: "800" },

@@ -179,46 +179,123 @@ function ProfileEditModal({
   }
 
   return (
-    <Modal animationType="slide" onRequestClose={onClose} transparent>
+    <Modal
+      animationType="slide"
+      onRequestClose={onClose}
+      transparent
+      statusBarTranslucent
+    >
       <SafeAreaView style={styles.modalScreen}>
-        <View style={styles.modalCard}>
-          <View style={styles.modalHeader}>
-            <View>
-              <Text style={styles.modalEyebrow}>EDIT PROFILE</Text>
-              <Text style={styles.modalTitle}>Keep your details current</Text>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
+          style={styles.keyboardContainer}
+        >
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <View>
+                <Text style={styles.modalEyebrow}>EDIT PROFILE</Text>
+                <Text style={styles.modalTitle}>Keep your details current</Text>
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Close profile edit form"
+                disabled={saving}
+                onPress={onClose}
+                style={styles.closeButton}
+              >
+                <Text style={styles.closeButtonText}>×</Text>
+              </Pressable>
             </View>
-            <Pressable disabled={saving} onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>×</Text>
-            </Pressable>
-          </View>
 
-          <ScrollView contentContainerStyle={styles.editContent} keyboardShouldPersistTaps="handled">
-            <View style={styles.editField}>
-              <Text style={styles.editLabel}>Full name *</Text>
-              <TextInput value={form.fullName} onChangeText={(fullName) => setForm((value) => ({ ...value, fullName }))} style={styles.editInput} placeholder="Your name" placeholderTextColor="#87968C" />
-            </View>
-            <View style={styles.editField}>
-              <Text style={styles.editLabel}>Organization name</Text>
-              <TextInput value={form.organizationName} onChangeText={(organizationName) => setForm((value) => ({ ...value, organizationName }))} style={styles.editInput} placeholder="Your organization" placeholderTextColor="#87968C" />
-            </View>
-            <View style={styles.editField}>
-              <Text style={styles.editLabel}>Phone number</Text>
-              <TextInput value={form.phone} onChangeText={(phone) => setForm((value) => ({ ...value, phone }))} keyboardType="phone-pad" style={styles.editInput} placeholder="Your phone number" placeholderTextColor="#87968C" />
-            </View>
-            <View style={styles.editField}>
-              <Text style={styles.editLabel}>Area</Text>
-              <TextInput value={form.area} onChangeText={(area) => setForm((value) => ({ ...value, area }))} style={styles.editInput} placeholder="e.g. Dhanmondi" placeholderTextColor="#87968C" />
-            </View>
-            <View style={styles.editField}>
-              <Text style={styles.editLabel}>Address</Text>
-              <TextInput value={form.address} onChangeText={(address) => setForm((value) => ({ ...value, address }))} multiline textAlignVertical="top" style={[styles.editInput, styles.editMultiline]} placeholder="Your address" placeholderTextColor="#87968C" />
-            </View>
-            {error ? <Text style={styles.editError}>{error}</Text> : null}
-            <Pressable disabled={saving} onPress={() => void save()} style={({ pressed }) => [styles.saveProfileButton, (pressed || saving) && styles.photoButtonPressed]}>
-              {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.saveProfileText}>Save profile</Text>}
-            </Pressable>
-          </ScrollView>
-        </View>
+            <ScrollView
+              contentContainerStyle={[styles.editContent, { paddingBottom: 280 }]}
+              keyboardShouldPersistTaps="handled"
+              automaticallyAdjustKeyboardInsets={true}
+              keyboardDismissMode="on-drag"
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.editField}>
+                <Text style={styles.editLabel}>Full name *</Text>
+                <TextInput
+                  value={form.fullName}
+                  onChangeText={(fullName) =>
+                    setForm((value) => ({ ...value, fullName }))
+                  }
+                  style={styles.editInput}
+                  placeholder="Your name"
+                  placeholderTextColor="#87968C"
+                />
+              </View>
+              <View style={styles.editField}>
+                <Text style={styles.editLabel}>Organization name</Text>
+                <TextInput
+                  value={form.organizationName}
+                  onChangeText={(organizationName) =>
+                    setForm((value) => ({ ...value, organizationName }))
+                  }
+                  style={styles.editInput}
+                  placeholder="Your organization"
+                  placeholderTextColor="#87968C"
+                />
+              </View>
+              <View style={styles.editField}>
+                <Text style={styles.editLabel}>Phone number</Text>
+                <TextInput
+                  value={form.phone}
+                  onChangeText={(phone) =>
+                    setForm((value) => ({ ...value, phone }))
+                  }
+                  keyboardType="phone-pad"
+                  style={styles.editInput}
+                  placeholder="Your phone number"
+                  placeholderTextColor="#87968C"
+                />
+              </View>
+              <View style={styles.editField}>
+                <Text style={styles.editLabel}>Area</Text>
+                <TextInput
+                  value={form.area}
+                  onChangeText={(area) =>
+                    setForm((value) => ({ ...value, area }))
+                  }
+                  style={styles.editInput}
+                  placeholder="e.g. Dhanmondi"
+                  placeholderTextColor="#87968C"
+                />
+              </View>
+              <View style={styles.editField}>
+                <Text style={styles.editLabel}>Address</Text>
+                <TextInput
+                  value={form.address}
+                  onChangeText={(address) =>
+                    setForm((value) => ({ ...value, address }))
+                  }
+                  multiline
+                  textAlignVertical="top"
+                  style={[styles.editInput, styles.editMultiline]}
+                  placeholder="Your address"
+                  placeholderTextColor="#87968C"
+                />
+              </View>
+              {error ? <Text style={styles.editError}>{error}</Text> : null}
+              <Pressable
+                disabled={saving}
+                onPress={() => void save()}
+                style={({ pressed }) => [
+                  styles.saveProfileButton,
+                  (pressed || saving) && styles.photoButtonPressed,
+                ]}
+              >
+                {saving ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.saveProfileText}>Save profile</Text>
+                )}
+              </Pressable>
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </Modal>
   );
@@ -712,6 +789,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 21,
   },
+  keyboardContainer: {
+    flex: 1,
+    justifyContent: "flex-end",
+    width: "100%",
+    maxWidth: 640,
+    alignSelf: "center",
+  },
   modalScreen: {
     flex: 1,
     justifyContent: "flex-end",
@@ -719,9 +803,11 @@ const styles = StyleSheet.create({
   },
   modalCard: {
     maxHeight: "92%",
+    flexShrink: 1,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     backgroundColor: "#F4F7F3",
+    overflow: "hidden",
   },
   modalHeader: {
     flexDirection: "row",
