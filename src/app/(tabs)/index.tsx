@@ -17,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
 import BrandHeader from "@/components/brand-header";
+import PaginationControls from "@/components/pagination-controls";
 import { useAuth } from "@/providers/auth-provider";
 import { AiAssistant } from "@/components/ai-assistant";
 import { asDate, formatBangladeshDateTime } from "@/lib/datetime";
@@ -186,9 +187,8 @@ function DonationCard({
 export default function HomeScreen() {
   const { user } = useAuth();
   const [donations, setDonations] = useState<FeedDonation[]>([]);
-  const [total, setTotal] = useState(0);
+  const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [areaInput, setAreaInput] = useState("");
@@ -211,54 +211,39 @@ export default function HomeScreen() {
     [],
   );
 
-  const loadFeed = useCallback(
-    async (offset: number, mode: "replace" | "append") => {
-      if (mode === "replace") {
-        setError(null);
-      }
+  const loadFeed = useCallback(async () => {
+    setError(null);
 
-      try {
-        const page = await getAvailableDonations({
-          limit: PAGE_SIZE,
-          offset,
-          area: area || undefined,
-        });
-        const donationsWithMedia = await addMediaToDonations(page.items);
-        const now = Date.now();
-        const activeItems = donationsWithMedia.filter((item) => {
-          if (item.status === "EXPIRED" || item.status !== "AVAILABLE") return false;
-          const deadlineTime = asDate(item.pickup_deadline)?.getTime() ?? Infinity;
-          return deadlineTime > now;
-        });
+    try {
+      const page = await getAvailableDonations({
+        limit: 100,
+        offset: 0,
+        area: area || undefined,
+      });
+      const donationsWithMedia = await addMediaToDonations(page.items);
+      const now = Date.now();
+      const activeItems = donationsWithMedia.filter((item) => {
+        if (item.status === "EXPIRED" || item.status !== "AVAILABLE") return false;
+        const deadlineTime = asDate(item.pickup_deadline)?.getTime() ?? Infinity;
+        return deadlineTime > now;
+      });
 
-        // Ensure latest donation posts appear first
-        activeItems.sort((a, b) => {
-          const timeA = asDate(a.created_at)?.getTime() ?? 0;
-          const timeB = asDate(b.created_at)?.getTime() ?? 0;
-          return timeB - timeA;
-        });
+      // Ensure latest donation posts appear first
+      activeItems.sort((a, b) => {
+        const timeA = asDate(a.created_at)?.getTime() ?? 0;
+        const timeB = asDate(b.created_at)?.getTime() ?? 0;
+        return timeB - timeA;
+      });
 
-        setTotal(page.total);
-        setDonations((current) => {
-          const combined = mode === "replace" ? activeItems : [...current, ...activeItems];
-          const map = new Map<number, FeedDonation>();
-          for (const item of combined) map.set(item.id, item);
-          return Array.from(map.values()).sort((a, b) => {
-            const timeA = asDate(a.created_at)?.getTime() ?? 0;
-            const timeB = asDate(b.created_at)?.getTime() ?? 0;
-            return timeB - timeA;
-          });
-        });
-      } catch (requestError) {
-        setError(
-          requestError instanceof Error
-            ? requestError.message
-            : "Could not load available donations.",
-        );
-      }
-    },
-    [addMediaToDonations, area],
-  );
+      setDonations(activeItems);
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Could not load available donations.",
+      );
+    }
+  }, [addMediaToDonations, area]);
 
   useFocusEffect(
     useCallback(() => {
@@ -270,7 +255,7 @@ export default function HomeScreen() {
 
         try {
           const page = await getAvailableDonations({
-            limit: PAGE_SIZE,
+            limit: 100,
             offset: 0,
             area: area || undefined,
           });
@@ -292,7 +277,6 @@ export default function HomeScreen() {
           if (!active) return;
 
           setDonations(activeItems);
-          setTotal(page.total);
         } catch (requestError) {
           if (active) {
             setError(
@@ -320,20 +304,13 @@ export default function HomeScreen() {
     if (refreshing) return;
 
     setRefreshing(true);
-    await loadFeed(0, "replace");
+    await loadFeed();
     setRefreshing(false);
-  }
-
-  async function loadMore() {
-    if (loadingMore || donations.length >= total) return;
-
-    setLoadingMore(true);
-    await loadFeed(donations.length, "append");
-    setLoadingMore(false);
   }
 
   function searchByArea() {
     const nextArea = areaInput.trim();
+    setOffset(0);
 
     if (nextArea === area) {
       setRefreshKey((value) => value + 1);
@@ -345,12 +322,14 @@ export default function HomeScreen() {
 
   function clearAreaSearch() {
     setAreaInput("");
+    setOffset(0);
     if (!area) return;
     setArea("");
   }
 
+  const total = donations.length;
   const firstName = user?.full_name.trim().split(/\s+/)[0] || "there";
-  const hasMore = donations.length < total;
+  const visibleDonations = donations.slice(offset, offset + PAGE_SIZE);
 
   return (
     <SafeAreaView
@@ -456,7 +435,7 @@ export default function HomeScreen() {
         ) : null}
 
         {!loading && !error
-          ? donations.map((donation) => (
+          ? visibleDonations.map((donation) => (
               <DonationCard
                 key={donation.id}
                 donation={donation}
@@ -467,23 +446,13 @@ export default function HomeScreen() {
             ))
           : null}
 
-        {!loading && !error && hasMore ? (
-          <Pressable
-            accessibilityRole="button"
-            disabled={loadingMore}
-            onPress={() => void loadMore()}
-            style={({ pressed }) => [
-              styles.loadMoreButton,
-              (pressed || loadingMore) && styles.buttonPressed,
-            ]}
-          >
-            {loadingMore ? (
-              <ActivityIndicator color="#176B43" />
-            ) : (
-              <Text style={styles.loadMoreText}>Load more donations</Text>
-            )}
-          </Pressable>
-        ) : null}
+        <PaginationControls
+          offset={offset}
+          limit={PAGE_SIZE}
+          total={total}
+          loading={loading}
+          onPageChange={setOffset}
+        />
       </ScrollView>
       <AiAssistant />
     </SafeAreaView>
