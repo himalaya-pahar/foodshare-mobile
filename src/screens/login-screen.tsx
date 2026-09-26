@@ -129,9 +129,12 @@ export default function LoginScreen({ onSignup }: LoginScreenProps) {
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 0}
       >
         <ScrollView
-          contentContainerStyle={styles.container}
+          automaticallyAdjustKeyboardInsets={true}
+          keyboardDismissMode="on-drag"
+          contentContainerStyle={[styles.container, { paddingBottom: 120 }]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
@@ -310,7 +313,6 @@ const styles = StyleSheet.create({
   },
   container: {
     flexGrow: 1,
-    justifyContent: "center",
     padding: 24,
   },
   form: {

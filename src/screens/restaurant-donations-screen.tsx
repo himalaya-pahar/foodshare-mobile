@@ -1,15 +1,18 @@
-import { useCallback, useEffect, useState } from "react";
+import DateTimePicker from "@expo/ui/community/datetime-picker";
+import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useFocusEffect } from "expo-router";
 import { useVideoPlayer, VideoView } from "expo-video";
-import DateTimePicker from "@expo/ui/community/datetime-picker";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Image,
+  FlatList,
   KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -17,13 +20,14 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 
 import BrandHeader from "@/components/brand-header";
 import DonationMediaModal from "@/components/donation-media-modal";
 import PaginationControls from "@/components/pagination-controls";
+import { getCachedData, invalidateCache, setCachedData } from "@/lib/cache";
 import { asDate, formatBangladeshDateTime } from "@/lib/datetime";
 import { useAuth } from "@/providers/auth-provider";
+import { getDonationMedia } from "@/services/donation-media";
 import {
   acceptPickupRequest,
   cancelDonation,
@@ -34,7 +38,6 @@ import {
   rejectPickupRequest,
   updateDonation,
 } from "@/services/donations";
-import { getDonationMedia } from "@/services/donation-media";
 import type {
   DonationFeedItem,
   DonationInput,
@@ -663,7 +666,7 @@ function PickupRequestsModal({
   );
 }
 
-function DonationCard({
+const DonationCard = React.memo(function DonationCard({
   donation,
   canManage,
   onEdit,
@@ -707,6 +710,9 @@ function DonationCard({
               accessibilityLabel={`Photo of ${donation.food_name}`}
               source={{ uri: item.media_url }}
               style={styles.heroMediaImage}
+              contentFit="cover"
+              transition={200}
+              cachePolicy="memory-disk"
             />
           ))}
           {videos.map((item) => (
@@ -805,7 +811,7 @@ function DonationCard({
       </View>
     </View>
   );
-}
+});
 
 export default function RestaurantDonationsScreen() {
   const { user } = useAuth();
@@ -822,7 +828,11 @@ export default function RestaurantDonationsScreen() {
   const [mediaDonation, setMediaDonation] = useState<DonationFeedItem | null>(null);
   const [busyDonationId, setBusyDonationId] = useState<number | null>(null);
 
-  const reload = useCallback(() => setRevision((current) => current + 1), []);
+  const reload = useCallback(() => {
+    invalidateCache("restaurant_donations_");
+    invalidateCache("feed_");
+    setRevision((current) => current + 1);
+  }, []);
 
   const addMediaToDonations = useCallback(
     async (items: DonationFeedItem[]): Promise<FeedDonation[]> =>
@@ -851,7 +861,14 @@ export default function RestaurantDonationsScreen() {
       }
 
       async function loadDonations() {
-        setLoading(true);
+        const cacheKey = `restaurant_donations_${offset}`;
+        const cached = getCachedData<PaginatedResponse<FeedDonation>>(cacheKey);
+        if (cached) {
+          setPage(cached);
+          setLoading(false);
+        } else {
+          setLoading(true);
+        }
         setError(null);
         try {
           const result = await getRestaurantDonations({ limit: PAGE_SIZE, offset });
@@ -870,7 +887,11 @@ export default function RestaurantDonationsScreen() {
             const timeB = asDate(b.created_at)?.getTime() ?? 0;
             return timeB - timeA;
           });
-          if (active) setPage({ ...result, items: sortedItems });
+          const newPage = { ...result, items: sortedItems };
+          if (active) {
+            setPage(newPage);
+            setCachedData(cacheKey, newPage, 45_000);
+          }
         } catch (requestError) {
           if (active) {
             setError(
@@ -962,9 +983,24 @@ export default function RestaurantDonationsScreen() {
   const canGoBack = offset > 0 && !loading;
   const canGoForward = offset + donations.length < total && !loading;
 
-  return (
-    <SafeAreaView style={styles.screen} edges={Platform.OS === "android" ? ["top", "left", "right"] : []}>
-      <ScrollView contentContainerStyle={styles.container} contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false}>
+  const renderDonationItem = useCallback(
+    ({ item }: { item: FeedDonation }) => (
+      <DonationCard
+        donation={item}
+        canManage={canManage}
+        onEdit={() => setFormDonation(item)}
+        onCancel={() => confirmCancel(item)}
+        onRequests={() => setSelectedDonation(item)}
+        onMedia={() => setMediaDonation(item)}
+        onComplete={() => confirmComplete(item)}
+      />
+    ),
+    [canManage],
+  );
+
+  const listHeader = useMemo(
+    () => (
+      <View style={styles.headerStack}>
         <BrandHeader />
 
         <View style={styles.header}>
@@ -989,31 +1025,68 @@ export default function RestaurantDonationsScreen() {
           ) : null}
         </View>
 
-        {loading ? <View style={styles.loadingBox}><ActivityIndicator color="#176B43" /><Text style={styles.loadingText}>Loading donations…</Text></View> : null}
-        {error ? <View style={styles.errorBox}><Text style={styles.errorText}>{error}</Text><Pressable onPress={reload}><Text style={styles.retryText}>Try again</Text></Pressable></View> : null}
-        {!loading && !error && donations.length === 0 ? <View style={styles.emptyBox}><Text style={styles.emptyTitle}>Nothing shared yet</Text><Text style={styles.emptyText}>Create your first donation to help food reach the community.</Text></View> : null}
+        {loading ? (
+          <View style={styles.loadingBox}>
+            <ActivityIndicator color="#176B43" />
+            <Text style={styles.loadingText}>Loading donations…</Text>
+          </View>
+        ) : null}
+        {error ? (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>{error}</Text>
+            <Pressable onPress={reload}>
+              <Text style={styles.retryText}>Try again</Text>
+            </Pressable>
+          </View>
+        ) : null}
+      </View>
+    ),
+    [canManage, error, loading, reload, total],
+  );
 
-        {!loading && !error ? donations.map((donation) => (
-          <DonationCard
-            key={donation.id}
-            donation={donation}
-            canManage={canManage}
-            onEdit={() => setFormDonation(donation)}
-            onCancel={() => confirmCancel(donation)}
-            onRequests={() => setSelectedDonation(donation)}
-            onMedia={() => setMediaDonation(donation)}
-            onComplete={() => confirmComplete(donation)}
-          />
-        )) : null}
+  const listEmpty = useMemo(() => {
+    if (loading || error) return null;
+    return (
+      <View style={styles.emptyBox}>
+        <Text style={styles.emptyTitle}>Nothing shared yet</Text>
+        <Text style={styles.emptyText}>Create your first donation to help food reach the community.</Text>
+      </View>
+    );
+  }, [error, loading]);
 
-        <PaginationControls
-          offset={offset}
-          limit={PAGE_SIZE}
-          total={total}
-          loading={loading}
-          onPageChange={setOffset}
-        />
-      </ScrollView>
+  const listFooter = useMemo(
+    () => (
+      <PaginationControls
+        offset={offset}
+        limit={PAGE_SIZE}
+        total={total}
+        loading={loading}
+        onPageChange={setOffset}
+      />
+    ),
+    [loading, offset, total],
+  );
+
+  return (
+    <SafeAreaView style={styles.screen}>
+      <FlatList
+        data={!loading && !error ? donations : []}
+        keyExtractor={(item) => String(item.id)}
+        renderItem={renderDonationItem}
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={5}
+        removeClippedSubviews={Platform.OS === "android"}
+        ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
+        ListHeaderComponent={listHeader}
+        ListEmptyComponent={listEmpty}
+        ListFooterComponent={listFooter}
+        refreshControl={<RefreshControl refreshing={loading && (page?.items?.length ?? 0) > 0} onRefresh={reload} tintColor="#176B43" />}
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
+      />
 
       {formDonation !== undefined && canManage ? <DonationFormModal key={formDonation?.id ?? "new"} donation={formDonation} area={user?.area} address={user?.address} onClose={() => setFormDonation(undefined)} onSave={saveDonation} /> : null}
       {selectedDonation ? <PickupRequestsModal donation={selectedDonation} canDecide={canManage} onClose={() => setSelectedDonation(null)} onDonationChanged={reload} /> : null}
@@ -1024,7 +1097,9 @@ export default function RestaurantDonationsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#F4F7F3" },
-  container: { width: "100%", maxWidth: 640, alignSelf: "center", paddingHorizontal: 22, paddingBottom: 36, gap: 18 },
+  container: { width: "100%", maxWidth: 640, alignSelf: "center", paddingHorizontal: 22, paddingBottom: 36 },
+  headerStack: { gap: 18, marginBottom: 18 },
+  itemSeparator: { height: 18 },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 10 },
 
   brand: { color: "#183B2A", fontSize: 21, fontWeight: "800", letterSpacing: -0.4 },

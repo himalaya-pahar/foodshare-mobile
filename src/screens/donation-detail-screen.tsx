@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { router, useLocalSearchParams } from "expo-router";
 import DateTimePicker from "@expo/ui/community/datetime-picker";
+import { Ionicons } from "@expo/vector-icons";
+import { router, useLocalSearchParams } from "expo-router";
 import { useVideoPlayer, VideoView } from "expo-video";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Image } from "expo-image";
 import {
   ActivityIndicator,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -14,12 +15,12 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import BrandHeader from "@/components/brand-header";
-import { useAuth } from "@/providers/auth-provider";
+import { getCachedData, setCachedData } from "@/lib/cache";
 import { asDate, formatBangladeshDateTime } from "@/lib/datetime";
+import { useAuth } from "@/providers/auth-provider";
 import { getDonationMedia } from "@/services/donation-media";
 import {
   createPickupRequest,
@@ -129,7 +130,15 @@ export default function DonationDetailScreen() {
       return;
     }
 
-    setLoading(true);
+    const cacheKey = `donation_detail_${donationId}`;
+    const cached = getCachedData<{ donation: DonationFeedItem; media: DonationMedia[] }>(cacheKey);
+    if (cached) {
+      setDonation(cached.donation);
+      setMedia(cached.media);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     setError(null);
 
     try {
@@ -138,8 +147,10 @@ export default function DonationDetailScreen() {
         getDonationMedia(donationId).catch(() => []),
       ]);
 
+      const sortedMedia = mediaResult.sort((first, second) => first.sort_order - second.sort_order);
       setDonation(donationResult);
-      setMedia(mediaResult.sort((first, second) => first.sort_order - second.sort_order));
+      setMedia(sortedMedia);
+      setCachedData(cacheKey, { donation: donationResult, media: sortedMedia }, 60_000);
 
       const earliestPickup = new Date(
         Math.max(
@@ -149,11 +160,13 @@ export default function DonationDetailScreen() {
       );
       setPickupAt(earliestPickup);
     } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Could not load this donation.",
-      );
+      if (!cached) {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Could not load this donation.",
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -216,16 +229,16 @@ export default function DonationDetailScreen() {
 
   const isDeadlineExpired = donation
     ? (asDate(donation.pickup_deadline)?.getTime() ?? Infinity) <= Date.now() &&
-      donation.status !== "COMPLETED" &&
-      donation.status !== "CANCELLED"
+    donation.status !== "COMPLETED" &&
+    donation.status !== "CANCELLED"
     : false;
 
   const canRequest =
     user?.role === "NGO" && donation?.status === "AVAILABLE" && !isDeadlineExpired;
   const postedBy = donation
     ? donation.restaurant_organization_name?.trim() ||
-      donation.restaurant_full_name?.trim() ||
-      "Verified Partner Restaurant"
+    donation.restaurant_full_name?.trim() ||
+    "Verified Partner Restaurant"
     : null;
 
   return (
@@ -234,12 +247,14 @@ export default function DonationDetailScreen() {
       edges={Platform.OS === "android" ? ["top", "left", "right"] : []}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 44 : 0}
         style={styles.flex}
       >
         <ScrollView
-          contentContainerStyle={[styles.container, { paddingBottom: 160 }]}
+          automaticallyAdjustKeyboardInsets={true}
+          keyboardDismissMode="on-drag"
+          contentContainerStyle={[styles.container, { paddingBottom: 280 }]}
           contentInsetAdjustmentBehavior="automatic"
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -296,137 +311,140 @@ export default function DonationDetailScreen() {
                 ) : null}
               </View>
 
-            {images.length > 0 || videos.length > 0 ? (
-              <ScrollView
-                horizontal
-                contentContainerStyle={styles.mediaRow}
-                nestedScrollEnabled
-                showsHorizontalScrollIndicator={false}
-              >
-                {images.map((item) => (
-                  <Image
-                    key={item.id}
-                    accessibilityLabel={`Photo of ${donation.food_name}`}
-                    source={{ uri: item.media_url }}
-                    style={styles.image}
-                  />
-                ))}
-                {videos.map((item) => (
-                  <DonationVideo key={item.id} uri={item.media_url} />
-                ))}
-              </ScrollView>
-            ) : null}
-
-            {donation.description ? (
-              <Text style={styles.description}>{donation.description}</Text>
-            ) : null}
-
-            <View style={styles.detailsCard}>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>QUANTITY</Text>
-                <Text style={[styles.detailValue, styles.highlightValue]}>
-                  {donation.quantity} {donation.unit}
-                </Text>
-              </View>
-              <View style={styles.divider} />
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>PREPARED AT</Text>
-                <Text style={styles.detailValue}>{formatBangladeshDateTime(donation.prepared_at)}</Text>
-              </View>
-              <View style={styles.divider} />
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>PICKUP DEADLINE</Text>
-                <Text style={[styles.detailValue, isDeadlineExpired ? styles.expiredDeadlineText : styles.highlightDeadlineText]}>
-                  {formatBangladeshDateTime(donation.pickup_deadline)}
-                  {isDeadlineExpired ? " (Expired)" : ""}
-                </Text>
-              </View>
-              <View style={styles.divider} />
-              <View style={styles.locationGroupCard}>
-                <View style={styles.locationGroupHeader}>
-                  <Ionicons name="location-sharp" size={16} color="#16673E" />
-                  <Text style={styles.locationGroupTitle}>PICKUP LOCATION & OPERATING AREA</Text>
-                </View>
-                <View style={styles.locationGroupBody}>
-                  <View style={styles.areaBadge}>
-                    <Text style={styles.areaBadgeText}>{donation.pickup_area}</Text>
-                  </View>
-                  <Text style={styles.addressText}>{donation.pickup_address}</Text>
-                </View>
-              </View>
-            </View>
-
-            {isDeadlineExpired ? (
-              <View style={styles.expiredNoticeCard}>
-                <Ionicons name="alert-circle" size={20} color="#DC2626" />
-                <Text style={styles.expiredNoticeText}>
-                  This donation's pickup deadline has passed. It has been marked as expired and is no longer open for pickup requests.
-                </Text>
-              </View>
-            ) : null}
-
-            {donation.storage_notes || donation.allergen_info ? (
-              <View style={styles.notesCard}>
-                {donation.storage_notes ? (
-                  <View style={styles.noteBlock}>
-                    <Text style={styles.noteLabel}>STORAGE NOTES</Text>
-                    <Text style={styles.noteText}>{donation.storage_notes}</Text>
-                  </View>
-                ) : null}
-                {donation.allergen_info ? (
-                  <View style={styles.noteBlock}>
-                    <Text style={styles.noteLabel}>ALLERGEN INFORMATION</Text>
-                    <Text style={styles.noteText}>{donation.allergen_info}</Text>
-                  </View>
-                ) : null}
-              </View>
-            ) : null}
-
-            {canRequest ? (
-              <View style={styles.requestCard}>
-                <Text style={styles.requestLabel}>NGO PICKUP REQUEST</Text>
-                <Text style={styles.requestTitle}>Request this donation</Text>
-                <Text style={styles.requestDescription}>
-                  Select a realistic collection time before the deadline.
-                </Text>
-                <PickUpTimeField value={pickupAt} onChange={setPickupAt} />
-                <View style={styles.field}>
-                  <Text style={styles.fieldLabel}>Message for the restaurant</Text>
-                  <TextInput
-                    multiline
-                    maxLength={500}
-                    onChangeText={setMessage}
-                    placeholder="Share your collection plan or contact details"
-                    placeholderTextColor="#87968C"
-                    style={styles.messageInput}
-                    textAlignVertical="top"
-                    value={message}
-                  />
-                </View>
-                {requestError ? <Text style={styles.requestError}>{requestError}</Text> : null}
-                {requestMessage ? <Text style={styles.requestSuccess}>{requestMessage}</Text> : null}
-                <Pressable
-                  accessibilityRole="button"
-                  disabled={submitting}
-                  onPress={() => void submitPickupRequest()}
-                  style={({ pressed }) => [
-                    styles.submitButton,
-                    (pressed || submitting) && styles.pressed,
-                  ]}
+              {images.length > 0 || videos.length > 0 ? (
+                <ScrollView
+                  horizontal
+                  contentContainerStyle={styles.mediaRow}
+                  nestedScrollEnabled
+                  showsHorizontalScrollIndicator={false}
                 >
-                  {submitting ? (
-                    <ActivityIndicator color="#FFFFFF" />
-                  ) : (
-                    <Text style={styles.submitButtonText}>Send pickup request</Text>
-                  )}
-                </Pressable>
+                  {images.map((item) => (
+                    <Image
+                      key={item.id}
+                      accessibilityLabel={`Photo of ${donation.food_name}`}
+                      source={{ uri: item.media_url }}
+                      style={styles.image}
+                      contentFit="cover"
+                      transition={200}
+                      cachePolicy="memory-disk"
+                    />
+                  ))}
+                  {videos.map((item) => (
+                    <DonationVideo key={item.id} uri={item.media_url} />
+                  ))}
+                </ScrollView>
+              ) : null}
+
+              {donation.description ? (
+                <Text style={styles.description}>{donation.description}</Text>
+              ) : null}
+
+              <View style={styles.detailsCard}>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>QUANTITY</Text>
+                  <Text style={[styles.detailValue, styles.highlightValue]}>
+                    {donation.quantity} {donation.unit}
+                  </Text>
+                </View>
+                <View style={styles.divider} />
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>PREPARED AT</Text>
+                  <Text style={styles.detailValue}>{formatBangladeshDateTime(donation.prepared_at)}</Text>
+                </View>
+                <View style={styles.divider} />
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>PICKUP DEADLINE</Text>
+                  <Text style={[styles.detailValue, isDeadlineExpired ? styles.expiredDeadlineText : styles.highlightDeadlineText]}>
+                    {formatBangladeshDateTime(donation.pickup_deadline)}
+                    {isDeadlineExpired ? " (Expired)" : ""}
+                  </Text>
+                </View>
+                <View style={styles.divider} />
+                <View style={styles.locationGroupCard}>
+                  <View style={styles.locationGroupHeader}>
+                    <Ionicons name="location-sharp" size={16} color="#16673E" />
+                    <Text style={styles.locationGroupTitle}>PICKUP LOCATION & OPERATING AREA</Text>
+                  </View>
+                  <View style={styles.locationGroupBody}>
+                    <View style={styles.areaBadge}>
+                      <Text style={styles.areaBadgeText}>{donation.pickup_area}</Text>
+                    </View>
+                    <Text style={styles.addressText}>{donation.pickup_address}</Text>
+                  </View>
+                </View>
               </View>
-            ) : null}
-          </>
-        ) : null}
-      </ScrollView>
-    </KeyboardAvoidingView>
-  </SafeAreaView>
+
+              {isDeadlineExpired ? (
+                <View style={styles.expiredNoticeCard}>
+                  <Ionicons name="alert-circle" size={20} color="#DC2626" />
+                  <Text style={styles.expiredNoticeText}>
+                    This donation's pickup deadline has passed. It has been marked as expired and is no longer open for pickup requests.
+                  </Text>
+                </View>
+              ) : null}
+
+              {donation.storage_notes || donation.allergen_info ? (
+                <View style={styles.notesCard}>
+                  {donation.storage_notes ? (
+                    <View style={styles.noteBlock}>
+                      <Text style={styles.noteLabel}>STORAGE NOTES</Text>
+                      <Text style={styles.noteText}>{donation.storage_notes}</Text>
+                    </View>
+                  ) : null}
+                  {donation.allergen_info ? (
+                    <View style={styles.noteBlock}>
+                      <Text style={styles.noteLabel}>ALLERGEN INFORMATION</Text>
+                      <Text style={styles.noteText}>{donation.allergen_info}</Text>
+                    </View>
+                  ) : null}
+                </View>
+              ) : null}
+
+              {canRequest ? (
+                <View style={styles.requestCard}>
+                  <Text style={styles.requestLabel}>NGO PICKUP REQUEST</Text>
+                  <Text style={styles.requestTitle}>Request this donation</Text>
+                  <Text style={styles.requestDescription}>
+                    Select a realistic collection time before the deadline.
+                  </Text>
+                  <PickUpTimeField value={pickupAt} onChange={setPickupAt} />
+                  <View style={styles.field}>
+                    <Text style={styles.fieldLabel}>Message for the restaurant</Text>
+                    <TextInput
+                      multiline
+                      maxLength={500}
+                      onChangeText={setMessage}
+                      placeholder="Share your collection plan or contact details"
+                      placeholderTextColor="#87968C"
+                      style={styles.messageInput}
+                      textAlignVertical="top"
+                      value={message}
+                    />
+                  </View>
+                  {requestError ? <Text style={styles.requestError}>{requestError}</Text> : null}
+                  {requestMessage ? <Text style={styles.requestSuccess}>{requestMessage}</Text> : null}
+                  <Pressable
+                    accessibilityRole="button"
+                    disabled={submitting}
+                    onPress={() => void submitPickupRequest()}
+                    style={({ pressed }) => [
+                      styles.submitButton,
+                      (pressed || submitting) && styles.pressed,
+                    ]}
+                  >
+                    {submitting ? (
+                      <ActivityIndicator color="#FFFFFF" />
+                    ) : (
+                      <Text style={styles.submitButtonText}>Send pickup request</Text>
+                    )}
+                  </Pressable>
+                </View>
+              ) : null}
+            </>
+          ) : null}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

@@ -16,13 +16,11 @@ import type { UseAiChat } from "./use-ai-chat";
 
 import { AiChatBubble } from "./ai-chat-bubble";
 import { AiChatInput } from "./ai-chat-input";
-import { AiTypingIndicator } from "./ai-typing-indicator";
 import {
   AiColors,
-  AiRadius,
-  AiSpacing,
-  SHEET_MAX_HEIGHT_PCT,
+  SHEET_MAX_HEIGHT_PCT
 } from "./ai-theme";
+import { AiTypingIndicator } from "./ai-typing-indicator";
 
 interface AiChatPanelProps {
   open: boolean;

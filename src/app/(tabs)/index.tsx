@@ -1,9 +1,11 @@
-import { useCallback, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { router, useFocusEffect, type Href } from "expo-router";
 import { useVideoPlayer, VideoView } from "expo-video";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Image,
+  FlatList,
   Platform,
   Pressable,
   RefreshControl,
@@ -14,13 +16,13 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 
+import { AiAssistant } from "@/components/ai-assistant";
 import BrandHeader from "@/components/brand-header";
 import PaginationControls from "@/components/pagination-controls";
-import { useAuth } from "@/providers/auth-provider";
-import { AiAssistant } from "@/components/ai-assistant";
+import { getCachedData, setCachedData } from "@/lib/cache";
 import { asDate, formatBangladeshDateTime } from "@/lib/datetime";
+import { useAuth } from "@/providers/auth-provider";
 import { getDonationMedia } from "@/services/donation-media";
 import { getAvailableDonations } from "@/services/donations";
 import type { DonationFeedItem } from "@/types/donation";
@@ -59,7 +61,7 @@ function DonationVideoPreview({
   );
 }
 
-function DonationCard({
+const DonationCard = React.memo(function DonationCard({
   donation,
   onPress,
 }: {
@@ -97,6 +99,9 @@ function DonationCard({
               accessibilityLabel={`Photo of ${donation.food_name}`}
               source={{ uri: item.media_url }}
               style={styles.heroMediaImage}
+              contentFit="cover"
+              transition={200}
+              cachePolicy="memory-disk"
             />
           ))}
           {videos.map((item) => (
@@ -182,7 +187,7 @@ function DonationCard({
       </View>
     </Pressable>
   );
-}
+});
 
 export default function HomeScreen() {
   const { user } = useAuth();
@@ -236,6 +241,8 @@ export default function HomeScreen() {
       });
 
       setDonations(activeItems);
+      const cacheKey = `feed_${area || "all"}`;
+      setCachedData(cacheKey, activeItems, 45_000);
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -250,7 +257,15 @@ export default function HomeScreen() {
       let active = true;
 
       async function loadInitialFeed() {
-        setLoading(true);
+        const cacheKey = `feed_${area || "all"}`;
+        const cached = getCachedData<FeedDonation[]>(cacheKey);
+
+        if (cached && cached.length > 0) {
+          setDonations(cached);
+          setLoading(false);
+        } else {
+          setLoading(true);
+        }
         setError(null);
 
         try {
@@ -277,6 +292,7 @@ export default function HomeScreen() {
           if (!active) return;
 
           setDonations(activeItems);
+          setCachedData(cacheKey, activeItems, 45_000);
         } catch (requestError) {
           if (active) {
             setError(
@@ -329,25 +345,24 @@ export default function HomeScreen() {
 
   const total = donations.length;
   const firstName = user?.full_name.trim().split(/\s+/)[0] || "there";
-  const visibleDonations = donations.slice(offset, offset + PAGE_SIZE);
+  const visibleDonations = useMemo(
+    () => donations.slice(offset, offset + PAGE_SIZE),
+    [donations, offset],
+  );
 
-  return (
-    <SafeAreaView
-      style={styles.screen}
-      edges={Platform.OS === "android" ? ["top", "left", "right"] : []}
-    >
-      <ScrollView
-        contentContainerStyle={styles.container}
-        contentInsetAdjustmentBehavior="automatic"
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => void refreshFeed()}
-            tintColor="#176B43"
-          />
-        }
-        showsVerticalScrollIndicator={false}
-      >
+  const renderDonationItem = useCallback(
+    ({ item }: { item: FeedDonation }) => (
+      <DonationCard
+        donation={item}
+        onPress={() => router.push(donationHref(item.id))}
+      />
+    ),
+    [],
+  );
+
+  const listHeader = useMemo(
+    () => (
+      <View style={styles.headerStack}>
         <BrandHeader />
 
         <View style={styles.header}>
@@ -421,39 +436,65 @@ export default function HomeScreen() {
             </Pressable>
           </View>
         ) : null}
+      </View>
+    ),
+    [area, areaInput, error, firstName, loading, total],
+  );
 
-        {!loading && !error && donations.length === 0 ? (
-          <View style={styles.emptyBox}>
-            <View style={styles.emptyIcon}>
-              <Text style={styles.emptyIconText}>+</Text>
-            </View>
-            <Text style={styles.emptyTitle}>No donations right now</Text>
-            <Text style={styles.emptyText}>
-              New food donations will appear here as soon as they are shared.
-            </Text>
-          </View>
-        ) : null}
+  const listEmpty = useMemo(() => {
+    if (loading || error) return null;
+    return (
+      <View style={styles.emptyBox}>
+        <Text style={styles.emptyTitle}>No donations right now</Text>
+        <Text style={styles.emptyText}>
+          New food donations will appear here as soon as they are shared.
+        </Text>
+      </View>
+    );
+  }, [error, loading]);
 
-        {!loading && !error
-          ? visibleDonations.map((donation) => (
-              <DonationCard
-                key={donation.id}
-                donation={donation}
-                onPress={() =>
-                  router.push(donationHref(donation.id))
-                }
-              />
-            ))
-          : null}
+  const listFooter = useMemo(
+    () => (
+      <PaginationControls
+        offset={offset}
+        limit={PAGE_SIZE}
+        total={total}
+        loading={loading}
+        onPageChange={setOffset}
+      />
+    ),
+    [loading, offset, total],
+  );
 
-        <PaginationControls
-          offset={offset}
-          limit={PAGE_SIZE}
-          total={total}
-          loading={loading}
-          onPageChange={setOffset}
-        />
-      </ScrollView>
+  return (
+    <SafeAreaView
+      style={styles.screen}
+      edges={Platform.OS === "android" ? ["top", "left", "right"] : []}
+    >
+      <FlatList
+        data={!loading && !error ? visibleDonations : []}
+        keyExtractor={(item) => String(item.id)}
+        renderItem={renderDonationItem}
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={5}
+        removeClippedSubviews={Platform.OS === "android"}
+        ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
+        ListHeaderComponent={listHeader}
+        ListEmptyComponent={listEmpty}
+        ListFooterComponent={listFooter}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void refreshFeed()}
+            tintColor="#176B43"
+          />
+        }
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
+      />
       <AiAssistant />
     </SafeAreaView>
   );
@@ -470,7 +511,13 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     paddingHorizontal: 22,
     paddingBottom: 36,
+  },
+  headerStack: {
     gap: 18,
+    marginBottom: 18,
+  },
+  itemSeparator: {
+    height: 18,
   },
   brandRow: {
     flexDirection: "row",
@@ -861,19 +908,6 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
     elevation: 1,
-  },
-  emptyIcon: {
-    width: 54,
-    height: 54,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 18,
-    backgroundColor: "#E2F4E8",
-  },
-  emptyIconText: {
-    color: "#176B43",
-    fontSize: 30,
-    fontWeight: "500",
   },
   emptyTitle: {
     marginTop: 16,

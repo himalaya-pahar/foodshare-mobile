@@ -9,7 +9,7 @@ export interface PaginationControlsProps {
   onPageChange: (newOffset: number) => void;
 }
 
-export default function PaginationControls({
+function PaginationControls({
   offset,
   limit,
   total,
@@ -98,6 +98,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 1.2,
     borderColor: "#DCE7E0",
+    minHeight: 64,
     paddingHorizontal: 16,
     paddingVertical: 12,
     marginVertical: 12,
@@ -154,3 +155,5 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.97 }],
   },
 });
+
+export default React.memo(PaginationControls);

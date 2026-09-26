@@ -1,10 +1,12 @@
-import { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import BrandHeader from "@/components/brand-header";
+import { getCachedData, invalidateCache, setCachedData } from "@/lib/cache";
 import { asDate, formatBangladeshDateTime } from "@/lib/datetime";
 import PaginationControls from "@/components/pagination-controls";
 import { useAuth } from "@/providers/auth-provider";
@@ -26,7 +29,7 @@ import type { PaginatedResponse } from "@/types/pagination";
 
 const PAGE_SIZE = 20;
 
-function PickupRequestCard({
+const PickupRequestCard = React.memo(function PickupRequestCard({
   request,
   busy,
   onWithdraw,
@@ -72,7 +75,7 @@ function PickupRequestCard({
       ) : null}
     </View>
   );
-}
+});
 
 export default function NGOPickupsScreen() {
   const { user } = useAuth();
@@ -99,7 +102,14 @@ export default function NGOPickupsScreen() {
       }
 
       async function loadRequests() {
-        setLoading(true);
+        const cacheKey = `ngo_pickups_${offset}`;
+        const cached = getCachedData<PaginatedResponse<PickupRequest>>(cacheKey);
+        if (cached) {
+          setPage(cached);
+          setLoading(false);
+        } else {
+          setLoading(true);
+        }
         setError(null);
 
         try {
@@ -118,7 +128,9 @@ export default function NGOPickupsScreen() {
             const timeB = asDate(b.requested_at)?.getTime() ?? 0;
             return timeB - timeA;
           });
-          setPage({ ...result, items: sortedItems });
+          const newPage = { ...result, items: sortedItems };
+          setPage(newPage);
+          setCachedData(cacheKey, newPage, 45_000);
         } catch (requestError) {
           if (active) {
             setError(
@@ -204,9 +216,27 @@ export default function NGOPickupsScreen() {
   const canGoBack = offset > 0 && !loading;
   const canGoForward = offset + requests.length < total && !loading;
 
-  return (
-    <SafeAreaView style={styles.screen} edges={Platform.OS === "android" ? ["top", "left", "right"] : []}>
-      <ScrollView contentContainerStyle={styles.container} contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false}>
+  const handleRefresh = useCallback(() => {
+    invalidateCache("ngo_pickups_");
+    invalidateCache("feed_");
+    setRefreshKey((value) => value + 1);
+  }, []);
+
+  const renderPickupItem = useCallback(
+    ({ item }: { item: PickupRequest }) => (
+      <PickupRequestCard
+        request={item}
+        busy={busyRequestId === item.id}
+        onWithdraw={() => confirmWithdraw(item)}
+        onCollect={() => confirmCollected(item)}
+      />
+    ),
+    [busyRequestId],
+  );
+
+  const listHeader = useMemo(
+    () => (
+      <View style={styles.headerStack}>
         <BrandHeader />
 
         <View style={styles.header}>
@@ -224,31 +254,82 @@ export default function NGOPickupsScreen() {
             <Text style={styles.sectionLabel}>MY PICKUP REQUESTS</Text>
             <Text style={styles.sectionTitle}>{total === 1 ? "1 request" : `${total} requests`}</Text>
           </View>
-          <Pressable onPress={() => setRefreshKey((value) => value + 1)} style={styles.refreshButton}>
+          <Pressable onPress={handleRefresh} style={styles.refreshButton}>
             <Text style={styles.refreshText}>Refresh</Text>
           </Pressable>
         </View>
 
-        {loading ? <View style={styles.stateBox}><ActivityIndicator color="#176B43" /><Text style={styles.stateText}>Loading requests…</Text></View> : null}
-        {error ? <View style={styles.errorBox}><Text style={styles.errorText}>{error}</Text><Pressable onPress={() => setRefreshKey((value) => value + 1)}><Text style={styles.retryText}>Try again</Text></Pressable></View> : null}
-        {!loading && !error && requests.length === 0 ? <View style={styles.emptyBox}><Text style={styles.emptyTitle}>No pickup requests yet</Text><Text style={styles.emptyText}>Open Home, search by area, and request an available donation.</Text></View> : null}
-        {!loading && !error ? requests.map((request) => <PickupRequestCard key={request.id} request={request} busy={busyRequestId === request.id} onWithdraw={() => confirmWithdraw(request)} onCollect={() => confirmCollected(request)} />) : null}
+        {loading ? (
+          <View style={styles.stateBox}>
+            <ActivityIndicator color="#176B43" />
+            <Text style={styles.stateText}>Loading requests…</Text>
+          </View>
+        ) : null}
+        {error ? (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>{error}</Text>
+            <Pressable onPress={handleRefresh}>
+              <Text style={styles.retryText}>Try again</Text>
+            </Pressable>
+          </View>
+        ) : null}
+      </View>
+    ),
+    [error, handleRefresh, loading, total],
+  );
 
-        <PaginationControls
-          offset={offset}
-          limit={PAGE_SIZE}
-          total={total}
-          loading={loading}
-          onPageChange={setOffset}
-        />
-      </ScrollView>
+  const listEmpty = useMemo(() => {
+    if (loading || error) return null;
+    return (
+      <View style={styles.emptyBox}>
+        <Text style={styles.emptyTitle}>No pickup requests yet</Text>
+        <Text style={styles.emptyText}>Open Home, search by area, and request an available donation.</Text>
+      </View>
+    );
+  }, [error, loading]);
+
+  const listFooter = useMemo(
+    () => (
+      <PaginationControls
+        offset={offset}
+        limit={PAGE_SIZE}
+        total={total}
+        loading={loading}
+        onPageChange={setOffset}
+      />
+    ),
+    [loading, offset, total],
+  );
+
+  return (
+    <SafeAreaView style={styles.screen} edges={Platform.OS === "android" ? ["top", "left", "right"] : []}>
+      <FlatList
+        data={!loading && !error ? requests : []}
+        keyExtractor={(item) => String(item.id)}
+        renderItem={renderPickupItem}
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={5}
+        removeClippedSubviews={Platform.OS === "android"}
+        ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
+        ListHeaderComponent={listHeader}
+        ListEmptyComponent={listEmpty}
+        ListFooterComponent={listFooter}
+        refreshControl={<RefreshControl refreshing={loading && requests.length > 0} onRefresh={handleRefresh} tintColor="#176B43" />}
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#F4F7F3" },
-  container: { width: "100%", maxWidth: 640, alignSelf: "center", paddingHorizontal: 22, paddingBottom: 36, gap: 18 },
+  container: { width: "100%", maxWidth: 640, alignSelf: "center", paddingHorizontal: 22, paddingBottom: 36 },
+  headerStack: { gap: 18, marginBottom: 18 },
+  itemSeparator: { height: 18 },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 10 },
 
   brand: { color: "#183B2A", fontSize: 21, fontWeight: "800" },

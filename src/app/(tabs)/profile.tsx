@@ -1,10 +1,12 @@
-import { useCallback, useState } from "react";
-import { useFocusEffect } from "expo-router";
+import { Image } from "expo-image";
+import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import { File } from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
-  Image,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -18,16 +20,16 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import BrandHeader from "@/components/brand-header";
 import LogoutButton from "@/components/logout-button";
+import { getCachedData, setCachedData } from "@/lib/cache";
 import { useAuth } from "@/providers/auth-provider";
 import {
   getMyProfileImage,
   uploadProfileImage,
 } from "@/services/profile-image";
 import type {
-  ApprovalStatus,
   ProfileUpdate,
   User,
-  UserRole,
+  UserRole
 } from "@/types/auth";
 import type {
   ProfileImageContentType,
@@ -236,15 +238,23 @@ export default function ProfileScreen() {
       let active = true;
 
       async function loadProfileImage() {
+        const cachedUrl = getCachedData<string>("my_profile_image_url");
+        if (cachedUrl && active) {
+          setProfileImageUrl(cachedUrl);
+        }
+
         try {
           const image = await getMyProfileImage();
 
           if (active) {
             setProfileImageUrl(image?.media_url ?? null);
+            if (image?.media_url) {
+              setCachedData("my_profile_image_url", image.media_url, 120_000);
+            }
             setPhotoError(null);
           }
         } catch {
-          if (active) {
+          if (active && !cachedUrl) {
             setPhotoError("Could not load your profile photo.");
           }
         }
@@ -308,9 +318,19 @@ export default function ProfileScreen() {
 
       setUploadingPhoto(true);
 
-      const savedImage = await uploadProfileImage(contentType, file);
+      const manipResult = await manipulateAsync(
+        asset.uri,
+        asset.width && asset.width > 1200 ? [{ resize: { width: 1200 } }] : [],
+        { compress: 0.8, format: SaveFormat.JPEG },
+      );
+
+      const compressedFile = new File(manipResult.uri);
+      const uploadContentType: ProfileImageContentType = "image/jpeg";
+
+      const savedImage = await uploadProfileImage(uploadContentType, compressedFile);
 
       setProfileImageUrl(savedImage.media_url);
+      setCachedData("my_profile_image_url", savedImage.media_url, 120_000);
       setPhotoMessage("Profile photo updated.");
     } catch (error) {
       setPhotoError(
@@ -358,7 +378,13 @@ export default function ProfileScreen() {
           >
             <View style={styles.avatar}>
               {profileImageUrl ? (
-                <Image source={{ uri: profileImageUrl }} style={styles.avatarImage} />
+                <Image
+                  source={{ uri: profileImageUrl }}
+                  style={styles.avatarImage}
+                  contentFit="cover"
+                  transition={200}
+                  cachePolicy="memory-disk"
+                />
               ) : (
                 <Text style={styles.avatarText}>{initial}</Text>
               )}
