@@ -1,6 +1,5 @@
-import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 
 interface BrandHeaderProps {
   size?: "compact" | "regular" | "large";
@@ -23,10 +22,14 @@ export default function BrandHeader({
           isLarge && styles.emblemWrapLarge,
         ]}
       >
-        <Ionicons
-          name="leaf"
-          size={isCompact ? 14 : isLarge ? 22 : 18}
-          color="#FFFFFF"
+        <Image
+          source={require("@/assets/images/brand-emblem.png")}
+          style={[
+            styles.emblemImage,
+            isCompact && styles.emblemImageCompact,
+            isLarge && styles.emblemImageLarge,
+          ]}
+          resizeMode="cover"
         />
       </View>
 
@@ -54,11 +57,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 11,
-    backgroundColor: "#16673E",
-    borderWidth: 1.2,
-    borderColor: "#228A53",
-    alignItems: "center",
-    justifyContent: "center",
+    overflow: "hidden",
     shadowColor: "#114D2E",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
@@ -74,6 +73,18 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
+  },
+  emblemImage: {
+    width: 36,
+    height: 36,
+  },
+  emblemImageCompact: {
+    width: 28,
+    height: 28,
+  },
+  emblemImageLarge: {
+    width: 44,
+    height: 44,
   },
   brandText: {
     fontSize: 22,
@@ -97,3 +108,4 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
 });
+
