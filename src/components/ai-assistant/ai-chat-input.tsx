@@ -54,7 +54,7 @@ export function AiChatInput({
       <View style={styles.row}>
         <TextInput
           style={styles.input}
-          placeholder="Type your question…"
+          placeholder="Ask about FoodShare or how it works…"
           placeholderTextColor={AiColors.textMuted}
           value={text}
           onChangeText={setText}

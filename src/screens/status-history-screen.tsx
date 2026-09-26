@@ -694,7 +694,12 @@ export default function StatusHistoryScreen() {
             setOffset(maxSafeOffset);
             return;
           }
-          setPage(nextPage);
+          const sortedItems = [...nextPage.items].sort((first, second) => {
+            const firstTime = asDate(first.posted_at)?.getTime() ?? 0;
+            const secondTime = asDate(second.posted_at)?.getTime() ?? 0;
+            return secondTime - firstTime;
+          });
+          setPage({ ...nextPage, items: sortedItems });
         } catch (requestError) {
           // The deployed API has legacy event logs. Use them until the two flow
           // endpoints described below are added, then automatically use the richer data.

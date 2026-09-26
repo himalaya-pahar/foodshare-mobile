@@ -19,7 +19,7 @@ import { Ionicons } from "@expo/vector-icons";
 import BrandHeader from "@/components/brand-header";
 import { useAuth } from "@/providers/auth-provider";
 import { AiAssistant } from "@/components/ai-assistant";
-import { formatBangladeshDateTime } from "@/lib/datetime";
+import { asDate, formatBangladeshDateTime } from "@/lib/datetime";
 import { getDonationMedia } from "@/services/donation-media";
 import { getAvailableDonations } from "@/services/donations";
 import type { DonationFeedItem } from "@/types/donation";
@@ -110,21 +110,20 @@ function DonationCard({
 
       <View style={styles.cardContent}>
         <View style={styles.cardTopRow}>
-          <View style={styles.verifiedSurplusBadge}>
-            <Ionicons name="shield-checkmark" size={12} color="#16673E" />
-            <Text style={styles.verifiedSurplusText}>Verified Surplus</Text>
-          </View>
           <View style={styles.availableBadge}>
             <View style={styles.availableDot} />
             <Text style={styles.availableText}>Available</Text>
+          </View>
+          <View style={styles.areaHighlightBadge}>
+            <Ionicons name="location-sharp" size={12} color="#16673E" />
+            <Text style={styles.areaHighlightText} numberOfLines={1}>
+              {donation.pickup_area}
+            </Text>
           </View>
         </View>
 
         <View style={styles.cardIdentity}>
           <Text style={styles.foodName}>{donation.food_name}</Text>
-          <Text style={styles.cardArea} numberOfLines={1}>
-            {donation.pickup_area}
-          </Text>
           {donation.description ? (
             <Text style={styles.description} numberOfLines={3}>
               {donation.description}
@@ -136,7 +135,7 @@ function DonationCard({
           <View style={styles.metaRow}>
             <View style={styles.metaItem}>
               <Text style={styles.metaLabel}>QUANTITY</Text>
-              <Text style={styles.metaValue}>
+              <Text style={styles.metaValueHighlight}>
                 {donation.quantity} {donation.unit}
               </Text>
             </View>
@@ -144,8 +143,8 @@ function DonationCard({
             <View style={styles.metaDivider} />
 
             <View style={styles.metaItem}>
-              <Text style={styles.metaLabel}>PICKUP BY</Text>
-              <Text style={styles.metaValue} numberOfLines={1}>
+              <Text style={styles.metaLabel}>SAFE UNTIL (PICKUP BY)</Text>
+              <Text style={styles.metaValueDeadline} numberOfLines={1}>
                 {formatBangladeshDateTime(donation.pickup_deadline)}
               </Text>
             </View>
@@ -153,8 +152,18 @@ function DonationCard({
         </View>
 
         <View style={styles.locationSection}>
-          <Text style={styles.locationLabel}>PICKUP LOCATION</Text>
-          <Text style={styles.address} numberOfLines={2}>{donation.pickup_address}</Text>
+          <View style={styles.locationHeaderRow}>
+            <Ionicons name="map-outline" size={13} color="#16673E" />
+            <Text style={styles.locationLabel}>AREA & PICKUP ADDRESS</Text>
+          </View>
+          <View style={styles.locationContentBox}>
+            <Text style={styles.locationAreaTitle} numberOfLines={1}>
+              {donation.pickup_area}
+            </Text>
+            <Text style={styles.address} numberOfLines={2}>
+              {donation.pickup_address}
+            </Text>
+          </View>
         </View>
 
         <View style={styles.postedByRow}>
@@ -215,13 +224,31 @@ export default function HomeScreen() {
           area: area || undefined,
         });
         const donationsWithMedia = await addMediaToDonations(page.items);
+        const now = Date.now();
+        const activeItems = donationsWithMedia.filter((item) => {
+          if (item.status === "EXPIRED" || item.status !== "AVAILABLE") return false;
+          const deadlineTime = asDate(item.pickup_deadline)?.getTime() ?? Infinity;
+          return deadlineTime > now;
+        });
+
+        // Ensure latest donation posts appear first
+        activeItems.sort((a, b) => {
+          const timeA = asDate(a.created_at)?.getTime() ?? 0;
+          const timeB = asDate(b.created_at)?.getTime() ?? 0;
+          return timeB - timeA;
+        });
 
         setTotal(page.total);
-        setDonations((current) =>
-          mode === "replace"
-            ? donationsWithMedia
-            : [...current, ...donationsWithMedia],
-        );
+        setDonations((current) => {
+          const combined = mode === "replace" ? activeItems : [...current, ...activeItems];
+          const map = new Map<number, FeedDonation>();
+          for (const item of combined) map.set(item.id, item);
+          return Array.from(map.values()).sort((a, b) => {
+            const timeA = asDate(a.created_at)?.getTime() ?? 0;
+            const timeB = asDate(b.created_at)?.getTime() ?? 0;
+            return timeB - timeA;
+          });
+        });
       } catch (requestError) {
         setError(
           requestError instanceof Error
@@ -248,10 +275,23 @@ export default function HomeScreen() {
             area: area || undefined,
           });
           const donationsWithMedia = await addMediaToDonations(page.items);
+          const now = Date.now();
+          const activeItems = donationsWithMedia.filter((item) => {
+            if (item.status === "EXPIRED" || item.status !== "AVAILABLE") return false;
+            const deadlineTime = asDate(item.pickup_deadline)?.getTime() ?? Infinity;
+            return deadlineTime > now;
+          });
+
+          // Ensure latest donation posts appear first
+          activeItems.sort((a, b) => {
+            const timeA = asDate(a.created_at)?.getTime() ?? 0;
+            const timeB = asDate(b.created_at)?.getTime() ?? 0;
+            return timeB - timeA;
+          });
 
           if (!active) return;
 
-          setDonations(donationsWithMedia);
+          setDonations(activeItems);
           setTotal(page.total);
         } catch (requestError) {
           if (active) {
@@ -619,20 +659,20 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 10,
   },
-  verifiedSurplusBadge: {
+  areaHighlightBadge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 9,
-    paddingVertical: 4.5,
-    borderRadius: 8,
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
     backgroundColor: "#EAF5EE",
     borderWidth: 1,
-    borderColor: "#CBE4D4",
+    borderColor: "#C5E3D0",
   },
-  verifiedSurplusText: {
+  areaHighlightText: {
     color: "#16673E",
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "800",
   },
   availableBadge: {
@@ -738,24 +778,47 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     letterSpacing: 0.7,
   },
-  metaValue: {
+  metaValueHighlight: {
+    color: "#16673E",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  metaValueDeadline: {
     color: "#284634",
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: "800",
+  },
+  locationSection: {
+    gap: 6,
+    borderRadius: 14,
+    padding: 12,
+    backgroundColor: "#F0F7F2",
+    borderWidth: 1,
+    borderColor: "#D8EADB",
+  },
+  locationHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  locationLabel: {
+    color: "#16673E",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+  },
+  locationContentBox: {
+    gap: 2,
+  },
+  locationAreaTitle: {
+    color: "#173526",
+    fontSize: 14,
+    fontWeight: "800",
   },
   address: {
     color: "#405A49",
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  locationSection: {
-    gap: 3,
-  },
-  locationLabel: {
-    color: "#7A8C80",
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 0.7,
+    fontSize: 12.5,
+    lineHeight: 18,
   },
   cardFooter: {
     marginHorizontal: -20,

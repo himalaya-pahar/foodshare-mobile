@@ -129,14 +129,14 @@ export function AiChatPanel({ open, onClose, chat }: AiChatPanelProps) {
                   <View style={styles.headerIconWrap}>
                     <Ionicons name="sparkles" size={15} color="#FFFFFF" />
                   </View>
-                  <Text style={styles.title}>FoodShare AI</Text>
+                  <Text style={styles.title}>FoodShare Guide</Text>
                   <View style={styles.headerBadge}>
                     <View style={styles.headerBadgeDot} />
-                    <Text style={styles.headerBadgeText}>Live</Text>
+                    <Text style={styles.headerBadgeText}>Info</Text>
                   </View>
                 </View>
                 <Text style={styles.disclaimer}>
-                  Instant guidance for donors, NGOs & food safety
+                  Platform guide: how FoodShare works & donation rules
                 </Text>
               </View>
 
@@ -186,10 +186,10 @@ export function AiChatPanel({ open, onClose, chat }: AiChatPanelProps) {
                       <Ionicons name="sparkles" size={24} color="#16673E" />
                     </View>
                     <Text style={styles.emptyTitle}>
-                      FoodShare Intelligence
+                      FoodShare Platform Guide
                     </Text>
                     <Text style={styles.emptyHint}>
-                      Ask questions about food safety guidelines, NGO pickup workflows, packaging standards, and community policies.
+                      Ask how FoodShare works, donation rules, and pickup guidelines. This assistant answers only FoodShare platform questions.
                     </Text>
                   </View>
 

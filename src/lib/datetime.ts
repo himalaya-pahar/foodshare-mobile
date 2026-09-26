@@ -1,3 +1,9 @@
+const BD_OFFSET_MS = 6 * 60 * 60 * 1000; // Bangladesh Time is fixed at UTC+6 (no DST)
+const MONTHS_SHORT = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
 /**
  * Normalizes and parses dates from API / DB into Date objects.
  * Server stores timestamps in UTC. If a string has no timezone offset or 'Z',
@@ -44,74 +50,71 @@ export function asDate(
 }
 
 /**
- * Formats a timestamp into a full date and time string in the user's LOCAL timezone.
- * Example: "26 Sep 2026, 02:05 AM"
+ * Solidly formats a timestamp into Bangladesh Time (UTC+6).
+ * Uses explicit UTC+6 calculation so it NEVER falls back to UTC+0 on any device/engine.
+ * Example: "26 Sep 2026, 10:56 AM"
  */
-export function formatLocalDateTime(
+export function formatBangladeshDateTime(
   value: Date | string | number | null | undefined,
 ): string {
   const date = asDate(value);
   if (!date) return "Time unavailable";
 
-  try {
-    return date.toLocaleString(undefined, {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
-  } catch {
-    return date.toLocaleString();
-  }
+  // Shift epoch by +6 hours to read exact Bangladesh components via UTC getters
+  const bd = new Date(date.getTime() + BD_OFFSET_MS);
+  const day = bd.getUTCDate();
+  const month = MONTHS_SHORT[bd.getUTCMonth()];
+  const year = bd.getUTCFullYear();
+  let hours = bd.getUTCHours();
+  const minutes = String(bd.getUTCMinutes()).padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12 || 12;
+  const hoursFormatted = String(hours).padStart(2, "0");
+
+  return `${day} ${month} ${year}, ${hoursFormatted}:${minutes} ${ampm}`;
 }
 
 /**
- * Formats a timestamp into a date-only string in the user's LOCAL timezone.
+ * Solidly formats a timestamp into Bangladesh Date (UTC+6).
  * Example: "26 Sep 2026"
  */
-export function formatLocalDate(
+export function formatBangladeshDate(
   value: Date | string | number | null | undefined,
 ): string {
   const date = asDate(value);
   if (!date) return "Date unavailable";
 
-  try {
-    return date.toLocaleDateString(undefined, {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  } catch {
-    return date.toLocaleDateString();
-  }
+  const bd = new Date(date.getTime() + BD_OFFSET_MS);
+  const day = bd.getUTCDate();
+  const month = MONTHS_SHORT[bd.getUTCMonth()];
+  const year = bd.getUTCFullYear();
+
+  return `${day} ${month} ${year}`;
 }
 
 /**
- * Formats a timestamp into a concise timeline time string in the user's LOCAL timezone.
- * Example: "26 Sep, 02:05 AM"
+ * Solidly formats a timestamp into a concise Bangladesh timeline time string (UTC+6).
+ * Example: "26 Sep, 10:56 AM"
  */
-export function formatLocalTimelineTime(
+export function formatBangladeshTimelineTime(
   value: Date | string | number | null | undefined,
 ): string {
   const date = asDate(value);
   if (!date) return "Time unavailable";
 
-  try {
-    return date.toLocaleString(undefined, {
-      day: "numeric",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
-  } catch {
-    return date.toLocaleString();
-  }
+  const bd = new Date(date.getTime() + BD_OFFSET_MS);
+  const day = bd.getUTCDate();
+  const month = MONTHS_SHORT[bd.getUTCMonth()];
+  let hours = bd.getUTCHours();
+  const minutes = String(bd.getUTCMinutes()).padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12 || 12;
+  const hoursFormatted = String(hours).padStart(2, "0");
+
+  return `${day} ${month}, ${hoursFormatted}:${minutes} ${ampm}`;
 }
 
-// Aliases for backwards compatibility with existing screen imports
-export const formatBangladeshDateTime = formatLocalDateTime;
-export const formatBangladeshDate = formatLocalDate;
-export const formatBangladeshTimelineTime = formatLocalTimelineTime;
+// Aliases
+export const formatLocalDateTime = formatBangladeshDateTime;
+export const formatLocalDate = formatBangladeshDate;
+export const formatLocalTimelineTime = formatBangladeshTimelineTime;

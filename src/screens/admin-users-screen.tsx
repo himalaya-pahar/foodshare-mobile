@@ -19,7 +19,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import BrandHeader from "@/components/brand-header";
 import { useAuth } from "@/providers/auth-provider";
 import PaginationControls from "@/components/pagination-controls";
-import { formatBangladeshDate, formatBangladeshDateTime } from "@/lib/datetime";
+import { asDate, formatBangladeshDate, formatBangladeshDateTime } from "@/lib/datetime";
 import {
   approveAdminUser,
   deleteAdminUser,
@@ -536,6 +536,12 @@ export default function AdminUsersScreen() {
               // Ignore fallback error and use pendingResult
             }
 
+            combined.sort((a, b) => {
+              const timeA = asDate(a.created_at)?.getTime() ?? 0;
+              const timeB = asDate(b.created_at)?.getTime() ?? 0;
+              return timeB - timeA;
+            });
+
             result = {
               items: combined.slice(offset, offset + PAGE_SIZE),
               total: pendingResult.total + additionalCount,
@@ -555,6 +561,12 @@ export default function AdminUsersScreen() {
               if (!u.status && u.approval_status === "PENDING") return false;
               if (!u.email_verified && u.status !== "active" && u.status !== "rejected") return false;
               return true;
+            });
+
+            nonPending.sort((a, b) => {
+              const timeA = asDate(a.created_at)?.getTime() ?? 0;
+              const timeB = asDate(b.created_at)?.getTime() ?? 0;
+              return timeB - timeA;
             });
 
             result = {

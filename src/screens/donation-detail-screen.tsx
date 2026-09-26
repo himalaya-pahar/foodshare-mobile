@@ -5,6 +5,7 @@ import { useVideoPlayer, VideoView } from "expo-video";
 import {
   ActivityIndicator,
   Image,
+  KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
@@ -213,8 +214,14 @@ export default function DonationDetailScreen() {
     }
   }
 
+  const isDeadlineExpired = donation
+    ? (asDate(donation.pickup_deadline)?.getTime() ?? Infinity) <= Date.now() &&
+      donation.status !== "COMPLETED" &&
+      donation.status !== "CANCELLED"
+    : false;
+
   const canRequest =
-    user?.role === "NGO" && donation?.status === "AVAILABLE";
+    user?.role === "NGO" && donation?.status === "AVAILABLE" && !isDeadlineExpired;
   const postedBy = donation
     ? donation.restaurant_organization_name?.trim() ||
       donation.restaurant_full_name?.trim() ||
@@ -226,65 +233,68 @@ export default function DonationDetailScreen() {
       style={styles.screen}
       edges={Platform.OS === "android" ? ["top", "left", "right"] : []}
     >
-      <ScrollView
-        contentContainerStyle={styles.container}
-        contentInsetAdjustmentBehavior="automatic"
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 44 : 0}
+        style={styles.flex}
       >
-        <View style={styles.topBar}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            onPress={() => router.back()}
-            style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
-          >
-            <Ionicons name="arrow-back" size={20} color="#176B43" />
-          </Pressable>
-          <BrandHeader size="compact" />
-        </View>
-
-        {loading ? (
-          <View style={styles.stateBox}>
-            <ActivityIndicator color="#176B43" />
-            <Text style={styles.stateText}>Loading donation…</Text>
-          </View>
-        ) : null}
-
-        {error ? (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{error}</Text>
-            <Pressable onPress={() => void loadDonation()}>
-              <Text style={styles.retryText}>Try again</Text>
+        <ScrollView
+          contentContainerStyle={[styles.container, { paddingBottom: 160 }]}
+          contentInsetAdjustmentBehavior="automatic"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.topBar}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              onPress={() => router.back()}
+              style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+            >
+              <Ionicons name="arrow-back" size={20} color="#176B43" />
             </Pressable>
+            <BrandHeader size="compact" />
           </View>
-        ) : null}
 
-        {donation && !loading && !error ? (
-          <>
-            <View style={styles.header}>
-              <View style={styles.headerTopRow}>
-                <View style={styles.statusBadge}>
-                  <View style={styles.statusDot} />
-                  <Text style={styles.statusText}>{statusLabel(donation.status)}</Text>
-                </View>
-                <View style={styles.verifiedPill}>
-                  <Ionicons name="shield-checkmark" size={13} color="#176B43" />
-                  <Text style={styles.verifiedPillText}>Verified Surplus</Text>
-                </View>
-              </View>
-              <Text style={styles.title}>{donation.food_name}</Text>
-              <View style={styles.locationRow}>
-                <Ionicons name="location-sharp" size={15} color="#176B43" />
-                <Text style={styles.area}>{donation.pickup_area}</Text>
-              </View>
-              {postedBy ? (
-                <View style={styles.postedByRow}>
-                  <Ionicons name="restaurant-outline" size={14} color="#526E5C" />
-                  <Text style={styles.postedBy}>Shared by {postedBy}</Text>
-                </View>
-              ) : null}
+          {loading ? (
+            <View style={styles.stateBox}>
+              <ActivityIndicator color="#176B43" />
+              <Text style={styles.stateText}>Loading donation…</Text>
             </View>
+          ) : null}
+
+          {error ? (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorText}>{error}</Text>
+              <Pressable onPress={() => void loadDonation()}>
+                <Text style={styles.retryText}>Try again</Text>
+              </Pressable>
+            </View>
+          ) : null}
+
+          {donation && !loading && !error ? (
+            <>
+              <View style={styles.header}>
+                <View style={styles.headerTopRow}>
+                  <View style={[styles.statusBadge, isDeadlineExpired && styles.statusBadgeExpired]}>
+                    <View style={[styles.statusDot, isDeadlineExpired && styles.statusDotExpired]} />
+                    <Text style={[styles.statusText, isDeadlineExpired && styles.statusTextExpired]}>
+                      {isDeadlineExpired ? "EXPIRED" : statusLabel(donation.status)}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={styles.title}>{donation.food_name}</Text>
+                <View style={styles.locationRow}>
+                  <Ionicons name="location-sharp" size={15} color="#176B43" />
+                  <Text style={styles.area}>{donation.pickup_area}</Text>
+                </View>
+                {postedBy ? (
+                  <View style={styles.postedByRow}>
+                    <Ionicons name="restaurant-outline" size={14} color="#526E5C" />
+                    <Text style={styles.postedBy}>Shared by {postedBy}</Text>
+                  </View>
+                ) : null}
+              </View>
 
             {images.length > 0 || videos.length > 0 ? (
               <ScrollView
@@ -314,7 +324,9 @@ export default function DonationDetailScreen() {
             <View style={styles.detailsCard}>
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>QUANTITY</Text>
-                <Text style={styles.detailValue}>{donation.quantity} {donation.unit}</Text>
+                <Text style={[styles.detailValue, styles.highlightValue]}>
+                  {donation.quantity} {donation.unit}
+                </Text>
               </View>
               <View style={styles.divider} />
               <View style={styles.detailRow}>
@@ -324,14 +336,34 @@ export default function DonationDetailScreen() {
               <View style={styles.divider} />
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>PICKUP DEADLINE</Text>
-                <Text style={styles.detailValue}>{formatBangladeshDateTime(donation.pickup_deadline)}</Text>
+                <Text style={[styles.detailValue, isDeadlineExpired ? styles.expiredDeadlineText : styles.highlightDeadlineText]}>
+                  {formatBangladeshDateTime(donation.pickup_deadline)}
+                  {isDeadlineExpired ? " (Expired)" : ""}
+                </Text>
               </View>
               <View style={styles.divider} />
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>PICKUP ADDRESS</Text>
-                <Text style={styles.detailValue}>{donation.pickup_address}</Text>
+              <View style={styles.locationGroupCard}>
+                <View style={styles.locationGroupHeader}>
+                  <Ionicons name="location-sharp" size={16} color="#16673E" />
+                  <Text style={styles.locationGroupTitle}>PICKUP LOCATION & OPERATING AREA</Text>
+                </View>
+                <View style={styles.locationGroupBody}>
+                  <View style={styles.areaBadge}>
+                    <Text style={styles.areaBadgeText}>{donation.pickup_area}</Text>
+                  </View>
+                  <Text style={styles.addressText}>{donation.pickup_address}</Text>
+                </View>
               </View>
             </View>
+
+            {isDeadlineExpired ? (
+              <View style={styles.expiredNoticeCard}>
+                <Ionicons name="alert-circle" size={20} color="#DC2626" />
+                <Text style={styles.expiredNoticeText}>
+                  This donation's pickup deadline has passed. It has been marked as expired and is no longer open for pickup requests.
+                </Text>
+              </View>
+            ) : null}
 
             {donation.storage_notes || donation.allergen_info ? (
               <View style={styles.notesCard}>
@@ -393,11 +425,13 @@ export default function DonationDetailScreen() {
           </>
         ) : null}
       </ScrollView>
-    </SafeAreaView>
+    </KeyboardAvoidingView>
+  </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
   screen: { flex: 1, backgroundColor: "#F4F7F3" },
   container: { width: "100%", maxWidth: 640, alignSelf: "center", paddingHorizontal: 22, paddingBottom: 36, gap: 18 },
   topBar: { flexDirection: "row", alignItems: "center", gap: 12 },
@@ -436,21 +470,15 @@ const styles = StyleSheet.create({
     backgroundColor: "#16673E",
   },
   statusText: { color: "#176B43", fontSize: 12, fontWeight: "800" },
-  verifiedPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    backgroundColor: "#EFF7F2",
-    borderWidth: 1,
-    borderColor: "#CCE4D5",
+  statusBadgeExpired: {
+    backgroundColor: "#FEE2E2",
+    borderColor: "#FECACA",
   },
-  verifiedPillText: {
-    color: "#176B43",
-    fontSize: 11,
-    fontWeight: "700",
+  statusDotExpired: {
+    backgroundColor: "#DC2626",
+  },
+  statusTextExpired: {
+    color: "#B91C1C",
   },
   title: { color: "#17251B", fontSize: 26, fontWeight: "800", letterSpacing: -0.6 },
   locationRow: {
@@ -474,7 +502,19 @@ const styles = StyleSheet.create({
   detailRow: { gap: 6 },
   detailLabel: { color: "#728278", fontSize: 11, fontWeight: "800", letterSpacing: 0.9 },
   detailValue: { color: "#264332", fontSize: 16, fontWeight: "700", lineHeight: 22 },
+  highlightValue: { color: "#16673E", fontSize: 18, fontWeight: "800" },
+  highlightDeadlineText: { color: "#1E3829", fontSize: 16, fontWeight: "700" },
+  expiredDeadlineText: { color: "#DC2626", fontSize: 15, fontWeight: "700" },
   divider: { height: 1, marginVertical: 16, backgroundColor: "#E4ECE6" },
+  locationGroupCard: { backgroundColor: "#F0F7F2", borderRadius: 14, padding: 14, borderWidth: 1, borderColor: "#D2E4D7", gap: 10 },
+  locationGroupHeader: { flexDirection: "row", alignItems: "center", gap: 6 },
+  locationGroupTitle: { color: "#16673E", fontSize: 11, fontWeight: "800", letterSpacing: 0.8 },
+  locationGroupBody: { gap: 8 },
+  areaBadge: { alignSelf: "flex-start", backgroundColor: "#FFFFFF", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: "#CCE4D5" },
+  areaBadgeText: { color: "#16673E", fontSize: 13, fontWeight: "700" },
+  addressText: { color: "#264332", fontSize: 15, fontWeight: "600", lineHeight: 21 },
+  expiredNoticeCard: { flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 16, padding: 14, backgroundColor: "#FEF2F2", borderWidth: 1.2, borderColor: "#FECACA" },
+  expiredNoticeText: { flex: 1, color: "#991B1B", fontSize: 13, fontWeight: "700", lineHeight: 18 },
   notesCard: { gap: 16, borderRadius: 22, padding: 20, backgroundColor: "#FAFDFB", borderWidth: 1.2, borderColor: "#DCE7E0", shadowColor: "#0D331D", shadowOpacity: 0.05, shadowRadius: 14, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
   noteBlock: { gap: 6 },
   noteLabel: { color: "#728278", fontSize: 11, fontWeight: "800", letterSpacing: 0.9 },

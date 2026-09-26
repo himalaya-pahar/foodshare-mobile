@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -304,125 +305,131 @@ function DonationFormModal({
   return (
     <Modal animationType="slide" onRequestClose={onClose} transparent>
       <SafeAreaView style={styles.modalScreen}>
-        <View style={styles.modalCard}>
-          <View style={styles.modalHeader}>
-            <View>
-              <Text style={styles.modalEyebrow}>
-                {donation ? "EDIT DONATION" : "NEW DONATION"}
-              </Text>
-              <Text style={styles.modalTitle}>
-                {donation ? "Update food details" : "Share surplus food"}
-              </Text>
-            </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Close donation form"
-              disabled={saving}
-              onPress={onClose}
-              style={styles.closeButton}
-            >
-              <Text style={styles.closeButtonText}>×</Text>
-            </Pressable>
-          </View>
-
-          <ScrollView
-            contentContainerStyle={styles.formContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            <InputField
-              label="Food name *"
-              value={form.foodName}
-              onChangeText={(foodName) => setForm((current) => ({ ...current, foodName }))}
-              placeholder="e.g. Vegetable biryani"
-            />
-            <InputField
-              label="Description"
-              value={form.description}
-              onChangeText={(description) => setForm((current) => ({ ...current, description }))}
-              placeholder="What food is available?"
-              multiline
-            />
-
-            <View style={styles.twoColumnRow}>
-              <View style={styles.halfField}>
-                <InputField
-                  label="Quantity *"
-                  value={form.quantity}
-                  onChangeText={(quantity) => setForm((current) => ({ ...current, quantity }))}
-                  placeholder="10"
-                  keyboardType="decimal-pad"
-                />
-              </View>
-              <View style={styles.halfField}>
-                <InputField
-                  label="Unit *"
-                  value={form.unit}
-                  onChangeText={(unit) => setForm((current) => ({ ...current, unit }))}
-                  placeholder="portions"
-                />
-              </View>
-            </View>
-
-            <DateTimeField
-              label="Prepared at *"
-              value={form.preparedAt}
-              onChange={(preparedAt) => setForm((current) => ({ ...current, preparedAt }))}
-            />
-            <DateTimeField
-              label="Pickup deadline *"
-              value={form.pickupDeadline}
-              onChange={(pickupDeadline) => setForm((current) => ({ ...current, pickupDeadline }))}
-            />
-            <InputField
-              label="Pickup area *"
-              value={form.pickupArea}
-              onChangeText={(pickupArea) => setForm((current) => ({ ...current, pickupArea }))}
-              placeholder="e.g. Dhanmondi"
-            />
-            <InputField
-              label="Pickup address *"
-              value={form.pickupAddress}
-              onChangeText={(pickupAddress) => setForm((current) => ({ ...current, pickupAddress }))}
-              placeholder="Street, building, pickup point"
-              multiline
-            />
-            <InputField
-              label="Storage notes"
-              value={form.storageNotes}
-              onChangeText={(storageNotes) => setForm((current) => ({ ...current, storageNotes }))}
-              placeholder="e.g. Keep refrigerated"
-              multiline
-            />
-            <InputField
-              label="Allergen information"
-              value={form.allergenInfo}
-              onChangeText={(allergenInfo) => setForm((current) => ({ ...current, allergenInfo }))}
-              placeholder="e.g. Contains dairy and nuts"
-              multiline
-            />
-
-            {error ? <Text style={styles.formError}>{error}</Text> : null}
-
-            <Pressable
-              accessibilityRole="button"
-              disabled={saving}
-              onPress={() => void submit()}
-              style={({ pressed }) => [
-                styles.saveButton,
-                (pressed || saving) && styles.buttonPressed,
-              ]}
-            >
-              {saving ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.saveButtonText}>
-                  {donation ? "Save changes" : "Publish donation"}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
+          style={styles.keyboardContainer}
+        >
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <View>
+                <Text style={styles.modalEyebrow}>
+                  {donation ? "EDIT DONATION" : "NEW DONATION"}
                 </Text>
-              )}
-            </Pressable>
-          </ScrollView>
-        </View>
+                <Text style={styles.modalTitle}>
+                  {donation ? "Update food details" : "Share surplus food"}
+                </Text>
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Close donation form"
+                disabled={saving}
+                onPress={onClose}
+                style={styles.closeButton}
+              >
+                <Text style={styles.closeButtonText}>×</Text>
+              </Pressable>
+            </View>
+
+            <ScrollView
+              contentContainerStyle={[styles.formContent, { paddingBottom: 160 }]}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              <InputField
+                label="Food name *"
+                value={form.foodName}
+                onChangeText={(foodName) => setForm((current) => ({ ...current, foodName }))}
+                placeholder="e.g. Vegetable biryani"
+              />
+              <InputField
+                label="Description"
+                value={form.description}
+                onChangeText={(description) => setForm((current) => ({ ...current, description }))}
+                placeholder="What food is available?"
+                multiline
+              />
+
+              <View style={styles.twoColumnRow}>
+                <View style={styles.halfField}>
+                  <InputField
+                    label="Quantity *"
+                    value={form.quantity}
+                    onChangeText={(quantity) => setForm((current) => ({ ...current, quantity }))}
+                    placeholder="10"
+                    keyboardType="decimal-pad"
+                  />
+                </View>
+                <View style={styles.halfField}>
+                  <InputField
+                    label="Unit *"
+                    value={form.unit}
+                    onChangeText={(unit) => setForm((current) => ({ ...current, unit }))}
+                    placeholder="portions"
+                  />
+                </View>
+              </View>
+
+              <DateTimeField
+                label="Prepared at *"
+                value={form.preparedAt}
+                onChange={(preparedAt) => setForm((current) => ({ ...current, preparedAt }))}
+              />
+              <DateTimeField
+                label="Pickup deadline *"
+                value={form.pickupDeadline}
+                onChange={(pickupDeadline) => setForm((current) => ({ ...current, pickupDeadline }))}
+              />
+              <InputField
+                label="Pickup area *"
+                value={form.pickupArea}
+                onChangeText={(pickupArea) => setForm((current) => ({ ...current, pickupArea }))}
+                placeholder="e.g. Dhanmondi"
+              />
+              <InputField
+                label="Pickup address *"
+                value={form.pickupAddress}
+                onChangeText={(pickupAddress) => setForm((current) => ({ ...current, pickupAddress }))}
+                placeholder="Street, building, pickup point"
+                multiline
+              />
+              <InputField
+                label="Storage notes"
+                value={form.storageNotes}
+                onChangeText={(storageNotes) => setForm((current) => ({ ...current, storageNotes }))}
+                placeholder="e.g. Keep refrigerated"
+                multiline
+              />
+              <InputField
+                label="Allergen information"
+                value={form.allergenInfo}
+                onChangeText={(allergenInfo) => setForm((current) => ({ ...current, allergenInfo }))}
+                placeholder="e.g. Contains dairy and nuts"
+                multiline
+              />
+
+              {error ? <Text style={styles.formError}>{error}</Text> : null}
+
+              <Pressable
+                accessibilityRole="button"
+                disabled={saving}
+                onPress={() => void submit()}
+                style={({ pressed }) => [
+                  styles.saveButton,
+                  (pressed || saving) && styles.buttonPressed,
+                ]}
+              >
+                {saving ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.saveButtonText}>
+                    {donation ? "Save changes" : "Publish donation"}
+                  </Text>
+                )}
+              </Pressable>
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </Modal>
   );
@@ -466,7 +473,12 @@ function PickupRequestsModal({
         setOffset(maxSafeOffset);
         return;
       }
-      setPage(result);
+      const sortedItems = [...result.items].sort((a, b) => {
+        const timeA = asDate(a.requested_at)?.getTime() ?? 0;
+        const timeB = asDate(b.requested_at)?.getTime() ?? 0;
+        return timeB - timeA;
+      });
+      setPage({ ...result, items: sortedItems });
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -668,7 +680,11 @@ function DonationCard({
   onMedia: () => void;
   onComplete: () => void;
 }) {
-  const editable = canManage && donation.status === "AVAILABLE";
+  const isDeadlineExpired =
+    (asDate(donation.pickup_deadline)?.getTime() ?? Infinity) <= Date.now() &&
+    donation.status !== "COMPLETED" &&
+    donation.status !== "CANCELLED";
+  const editable = canManage && donation.status === "AVAILABLE" && !isDeadlineExpired;
   const canComplete = canManage && donation.status === "COLLECTED";
 
   const images = donation.media.filter((item) => item.media_type === "IMAGE");
@@ -705,19 +721,38 @@ function DonationCard({
 
       <View style={styles.cardContent}>
         <View style={styles.cardHeader}>
-          <View style={styles.listingBadge}>
-            <Ionicons name="leaf" size={11} color="#16673E" />
-            <Text style={styles.listingBadgeText}>Active Listing</Text>
+          <View style={[styles.listingBadge, isDeadlineExpired && styles.listingBadgeExpired]}>
+            <Ionicons
+              name={isDeadlineExpired ? "time" : "leaf"}
+              size={11}
+              color={isDeadlineExpired ? "#B91C1C" : "#16673E"}
+            />
+            <Text style={[styles.listingBadgeText, isDeadlineExpired && styles.listingBadgeTextExpired]}>
+              {isDeadlineExpired ? "Deadline Expired" : "Active Listing"}
+            </Text>
           </View>
-          <View style={[styles.statusBadge, styles[`status${donation.status}`]]}>
-            <Text style={styles.statusText}>{statusLabel(donation.status)}</Text>
+          <View style={[styles.statusBadge, isDeadlineExpired ? styles.statusEXPIRED : styles[`status${donation.status}`]]}>
+            <Text style={[styles.statusText, isDeadlineExpired && styles.statusTextEXPIRED]}>
+              {isDeadlineExpired ? "Expired" : statusLabel(donation.status)}
+            </Text>
           </View>
         </View>
 
         <View style={styles.donationIdentity}>
           <Text style={styles.foodName}>{donation.food_name}</Text>
-          <Text style={styles.areaText} numberOfLines={1}>{donation.pickup_area}</Text>
-          <Text style={styles.quantityText}>{donation.quantity} {donation.unit}</Text>
+          <View style={styles.quantityBadge}>
+            <Text style={styles.quantityText}>{donation.quantity} {donation.unit}</Text>
+          </View>
+        </View>
+
+        <View style={styles.locationGroup}>
+          <View style={styles.locationHeaderRow}>
+            <Ionicons name="location-sharp" size={14} color="#16673E" />
+            <Text style={styles.locationAreaTitle}>{donation.pickup_area}</Text>
+          </View>
+          <Text style={styles.locationAddressText} numberOfLines={2}>
+            {donation.pickup_address}
+          </Text>
         </View>
 
         <View style={styles.detailsPanel}>
@@ -730,9 +765,13 @@ function DonationCard({
             </View>
             <View style={styles.metaDivider} />
             <View style={styles.metaItem}>
-              <Text style={styles.metaLabel}>PICKUP BY</Text>
-              <Text style={styles.metaValue} numberOfLines={1}>
+              <Text style={styles.metaLabel}>PICKUP DEADLINE</Text>
+              <Text
+                style={[styles.metaValue, isDeadlineExpired ? styles.metaValueExpired : styles.metaValueDeadline]}
+                numberOfLines={1}
+              >
                 {formatBangladeshDateTime(donation.pickup_deadline)}
+                {isDeadlineExpired ? " (Expired)" : ""}
               </Text>
             </View>
           </View>
@@ -826,7 +865,12 @@ export default function RestaurantDonationsScreen() {
             return;
           }
           const itemsWithMedia = await addMediaToDonations(result.items);
-          if (active) setPage({ ...result, items: itemsWithMedia });
+          const sortedItems = [...itemsWithMedia].sort((a, b) => {
+            const timeA = asDate(a.created_at)?.getTime() ?? 0;
+            const timeB = asDate(b.created_at)?.getTime() ?? 0;
+            return timeB - timeA;
+          });
+          if (active) setPage({ ...result, items: sortedItems });
         } catch (requestError) {
           if (active) {
             setError(
@@ -1034,19 +1078,30 @@ const styles = StyleSheet.create({
   statusRESERVED: { backgroundColor: "#FFF0D4", borderColor: "#F7D8A7" },
   statusCOLLECTED: { backgroundColor: "#E1EEFF", borderColor: "#C7DCF9" },
   statusCOMPLETED: { backgroundColor: "#DFF1E5", borderColor: "#BFE4CD" },
-  statusEXPIRED: { backgroundColor: "#F0F0F0", borderColor: "#D5D5D5" },
+  statusEXPIRED: { backgroundColor: "#FEE2E2", borderColor: "#FECACA" },
   statusCANCELLED: { backgroundColor: "#FFE8E5", borderColor: "#F9C3BC" },
   statusText: { color: "#24593B", fontSize: 12, fontWeight: "800" },
+  statusTextEXPIRED: { color: "#B91C1C" },
+  listingBadgeExpired: { backgroundColor: "#FEF2F2", borderColor: "#FECACA" },
+  listingBadgeTextExpired: { color: "#B91C1C" },
   areaText: { color: "#66786D", fontSize: 13, fontWeight: "700" },
   foodName: { color: "#173526", fontSize: 20, fontWeight: "800", letterSpacing: -0.4 },
-  donationIdentity: { gap: 5 },
-  quantityText: { color: "#496957", fontSize: 15, fontWeight: "700" },
+  donationIdentity: { gap: 6 },
+  quantityBadge: { alignSelf: "flex-start", backgroundColor: "#EAF5EE", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: "#CCE4D5" },
+  quantityText: { color: "#16673E", fontSize: 14, fontWeight: "800" },
+  locationGroup: { backgroundColor: "#F0F7F2", borderRadius: 12, padding: 12, borderWidth: 1, borderColor: "#D5E5DA", gap: 6 },
+  locationHeaderRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  locationAreaTitle: { color: "#16673E", fontSize: 13, fontWeight: "800" },
+  locationAddressText: { color: "#3B5344", fontSize: 13, fontWeight: "600", lineHeight: 18 },
   detailsPanel: { borderRadius: 14, padding: 12, backgroundColor: "#F3F7F4" },
   metaRow: { flexDirection: "row", alignItems: "stretch" },
   metaItem: { flex: 1, gap: 4 },
   metaDivider: { width: 1, marginHorizontal: 12, backgroundColor: "#DCE7DE" },
   metaLabel: { color: "#7A8C80", fontSize: 10, fontWeight: "800", letterSpacing: 0.7 },
   metaValue: { color: "#284634", fontSize: 13, fontWeight: "700" },
+  metaValueDeadline: { color: "#16673E", fontSize: 13, fontWeight: "700" },
+  metaValueExpired: { color: "#B91C1C", fontSize: 13, fontWeight: "700" },
+  keyboardContainer: { flex: 1, justifyContent: "flex-end", width: "100%", maxWidth: 640, alignSelf: "center" },
   cardActions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 },
   secondaryButton: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: "#EAF3ED", borderWidth: 1, borderColor: "#CCE2D4" },
   secondaryButtonText: { color: "#16673E", fontSize: 13, fontWeight: "800" },

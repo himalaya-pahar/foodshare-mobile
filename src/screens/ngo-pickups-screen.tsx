@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import BrandHeader from "@/components/brand-header";
-import { formatBangladeshDateTime } from "@/lib/datetime";
+import { asDate, formatBangladeshDateTime } from "@/lib/datetime";
 import PaginationControls from "@/components/pagination-controls";
 import { useAuth } from "@/providers/auth-provider";
 import {
@@ -113,7 +113,12 @@ export default function NGOPickupsScreen() {
             setOffset(maxSafeOffset);
             return;
           }
-          setPage(result);
+          const sortedItems = [...result.items].sort((a, b) => {
+            const timeA = asDate(a.requested_at)?.getTime() ?? 0;
+            const timeB = asDate(b.requested_at)?.getTime() ?? 0;
+            return timeB - timeA;
+          });
+          setPage({ ...result, items: sortedItems });
         } catch (requestError) {
           if (active) {
             setError(
