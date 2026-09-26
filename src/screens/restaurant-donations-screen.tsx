@@ -689,7 +689,8 @@ const DonationCard = React.memo(function DonationCard({
     (asDate(donation.pickup_deadline)?.getTime() ?? Infinity) <= Date.now() &&
     donation.status !== "COMPLETED" &&
     donation.status !== "CANCELLED";
-  const editable = canManage && donation.status === "AVAILABLE" && !isDeadlineExpired;
+  const isExpired = donation.status === "EXPIRED" || isDeadlineExpired;
+  const editable = canManage && donation.status === "AVAILABLE" && !isExpired;
   const canComplete = canManage && donation.status === "COLLECTED";
 
   const images = donation.media.filter((item) => item.media_type === "IMAGE");
@@ -729,21 +730,12 @@ const DonationCard = React.memo(function DonationCard({
 
       <View style={styles.cardContent}>
         <View style={styles.cardHeader}>
-          <View style={[styles.listingBadge, isDeadlineExpired && styles.listingBadgeExpired]}>
-            <Ionicons
-              name={isDeadlineExpired ? "time" : "leaf"}
-              size={11}
-              color={isDeadlineExpired ? "#B91C1C" : "#16673E"}
-            />
-            <Text style={[styles.listingBadgeText, isDeadlineExpired && styles.listingBadgeTextExpired]}>
-              {isDeadlineExpired ? "Deadline Expired" : "Active Listing"}
+          <View style={[styles.statusBadge, isExpired ? styles.statusEXPIRED : styles[`status${donation.status}`]]}>
+            <Text style={[styles.statusText, isExpired && styles.statusTextEXPIRED]}>
+              {isExpired ? "Expired" : statusLabel(donation.status)}
             </Text>
           </View>
-          <View style={[styles.statusBadge, isDeadlineExpired ? styles.statusEXPIRED : styles[`status${donation.status}`]]}>
-            <Text style={[styles.statusText, isDeadlineExpired && styles.statusTextEXPIRED]}>
-              {isDeadlineExpired ? "Expired" : statusLabel(donation.status)}
-            </Text>
-          </View>
+          <Text style={styles.donationIdTop}>Donation #{donation.id}</Text>
         </View>
 
         <View style={styles.donationIdentity}>
@@ -1148,8 +1140,6 @@ const styles = StyleSheet.create({
   heroMediaImage: { width: 340, height: 220, backgroundColor: "#E4EEE6" },
   heroMediaVideo: { width: 340, height: 220, backgroundColor: "#1C4834" },
   cardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
-  listingBadge: { flexDirection: "row", alignItems: "center", gap: 4, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, backgroundColor: "#EAF5EE", borderWidth: 1, borderColor: "#CBE4D4" },
-  listingBadgeText: { color: "#16673E", fontSize: 11, fontWeight: "800" },
   statusBadge: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: "#E4F2E8", borderWidth: 1, borderColor: "#D1E3D7" },
   statusAVAILABLE: { backgroundColor: "#E2F4E8", borderColor: "#BDE6CE" },
   statusRESERVED: { backgroundColor: "#FFF0D4", borderColor: "#F7D8A7" },
@@ -1159,8 +1149,7 @@ const styles = StyleSheet.create({
   statusCANCELLED: { backgroundColor: "#FFE8E5", borderColor: "#F9C3BC" },
   statusText: { color: "#24593B", fontSize: 12, fontWeight: "800" },
   statusTextEXPIRED: { color: "#B91C1C" },
-  listingBadgeExpired: { backgroundColor: "#FEF2F2", borderColor: "#FECACA" },
-  listingBadgeTextExpired: { color: "#B91C1C" },
+  donationIdTop: { color: "#6E8275", fontSize: 12, fontWeight: "700", letterSpacing: 0.3 },
   areaText: { color: "#66786D", fontSize: 13, fontWeight: "700" },
   foodName: { color: "#173526", fontSize: 20, fontWeight: "800", letterSpacing: -0.4 },
   donationIdentity: { gap: 6 },
