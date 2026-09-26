@@ -735,7 +735,6 @@ const DonationCard = React.memo(function DonationCard({
               {isExpired ? "Expired" : statusLabel(donation.status)}
             </Text>
           </View>
-          <Text style={styles.donationIdTop}>Donation #{donation.id}</Text>
         </View>
 
         <View style={styles.donationIdentity}>
@@ -771,7 +770,6 @@ const DonationCard = React.memo(function DonationCard({
                 numberOfLines={1}
               >
                 {formatBangladeshDateTime(donation.pickup_deadline)}
-                {isDeadlineExpired ? " (Expired)" : ""}
               </Text>
             </View>
           </View>
