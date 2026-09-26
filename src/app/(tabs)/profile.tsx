@@ -1,5 +1,4 @@
 import { Image } from "expo-image";
-import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import { File } from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
 import { useFocusEffect } from "expo-router";
@@ -318,16 +317,7 @@ export default function ProfileScreen() {
 
       setUploadingPhoto(true);
 
-      const manipResult = await manipulateAsync(
-        asset.uri,
-        asset.width && asset.width > 1200 ? [{ resize: { width: 1200 } }] : [],
-        { compress: 0.8, format: SaveFormat.JPEG },
-      );
-
-      const compressedFile = new File(manipResult.uri);
-      const uploadContentType: ProfileImageContentType = "image/jpeg";
-
-      const savedImage = await uploadProfileImage(uploadContentType, compressedFile);
+      const savedImage = await uploadProfileImage(contentType, file);
 
       setProfileImageUrl(savedImage.media_url);
       setCachedData("my_profile_image_url", savedImage.media_url, 120_000);

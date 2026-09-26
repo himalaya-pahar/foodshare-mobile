@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Image } from "expo-image";
-import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import { File } from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
 import {
@@ -150,8 +149,7 @@ export default function DonationMediaModal({
       const selected: Array<{ contentType: DonationMediaContentType; file: File }> = [];
 
       for (const asset of rawAssets) {
-        let assetUri = asset.uri;
-        let contentType = resolveContentType(
+        const contentType = resolveContentType(
           kind,
           asset.mimeType,
           asset.fileName,
@@ -166,17 +164,7 @@ export default function DonationMediaModal({
           );
         }
 
-        if (kind === "image") {
-          const manipResult = await manipulateAsync(
-            asset.uri,
-            asset.width && asset.width > 1200 ? [{ resize: { width: 1200 } }] : [],
-            { compress: 0.8, format: SaveFormat.JPEG },
-          );
-          assetUri = manipResult.uri;
-          contentType = "image/jpeg";
-        }
-
-        const file = new File(assetUri);
+        const file = new File(asset.uri);
 
         if (!file.exists || file.size <= 0) {
           throw new Error("Could not read the selected media. Please try again.");
